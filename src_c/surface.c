@@ -1860,49 +1860,141 @@ surf_blit(pgSurfaceObject *self, PyObject *args, PyObject *keywds)
 {
     SDL_Surface *src, *dest = pgSurface_AsSurface(self);
     SDL_Rect *src_rect, temp;
-    PyObject *argpos, *argrect = NULL;
+    PyObject *argpos, *argrect = NULL, *anchor = NULL, *rect;
     pgSurfaceObject *srcobject;
     int dx, dy, result;
     SDL_Rect dest_rect;
     int sx, sy;
     int blend_flags = 0;
 
-    static char *kwids[] = {"source", "dest", "area", "special_flags", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O|Oi", kwids,
-                                     &pgSurface_Type, &srcobject, &argpos,
-                                     &argrect, &blend_flags))
-        return NULL;
+    if (keywds) {
+        static char *kwids[] = {"source", "dest", "area", "special_flags", NULL};
 
-    src = pgSurface_AsSurface(srcobject);
-    SURF_INIT_CHECK(src)
-    SURF_INIT_CHECK(dest)
+        if (anchor = PyDict_GetItemString(keywds, "anchor")) {
+            Py_INCREF(anchor);
+            PyDict_DelItemString(keywds, "anchor");
 
-    if ((src_rect = pgRect_FromObject(argpos, &temp))) {
-        dx = src_rect->x;
-        dy = src_rect->y;
-    }
-    else if (pg_TwoIntsFromObj(argpos, &sx, &sy)) {
-        dx = sx;
-        dy = sy;
-    }
-    else
-        return RAISE(PyExc_TypeError, "invalid destination position for blit");
+            if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O|Oi", kwids,
+                                            &pgSurface_Type, &srcobject, &argpos,
+                                            &argrect, &blend_flags))
+                return NULL;
 
-    if (argrect && argrect != Py_None) {
-        if (!(src_rect = pgRect_FromObject(argrect, &temp)))
-            return RAISE(PyExc_TypeError, "Invalid rectstyle argument");
+            src = pgSurface_AsSurface(srcobject);
+            SURF_INIT_CHECK(src)
+            SURF_INIT_CHECK(dest)
+
+            if (argrect && argrect != Py_None) {
+                if (!(src_rect = pgRect_FromObject(argrect, &temp)))
+                    return RAISE(PyExc_TypeError, "Invalid rectstyle argument");
+            }
+            else {
+                temp.x = temp.y = 0;
+                temp.w = src->w;
+                temp.h = src->h;
+                src_rect = &temp;
+            }
+
+            rect = pgRect_New4(0, 0, src_rect->w, src_rect->h);
+
+            if (PyTuple_GET_SIZE(argpos) == 2) {
+                PyObject_SetAttr(rect, anchor, argpos);
+            }
+            else if (pgRect_Check(argpos)) {
+                PyObject_SetAttr(rect, anchor,
+                                PyObject_GetAttrString(rect, "topleft"));
+            }
+            else
+                return RAISE(PyExc_TypeError,
+                            "invalid destination position for blit");
+
+            dest_rect = pgRect_AsRect(rect);
+        }
+        else {
+            if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O|Oi", kwids,
+                                            &pgSurface_Type, &srcobject, &argpos,
+                                            &argrect, &blend_flags))
+                return NULL;
+
+            src = pgSurface_AsSurface(srcobject);
+            SURF_INIT_CHECK(src)
+            SURF_INIT_CHECK(dest)
+
+            if ((src_rect = pgRect_FromObject(argpos, &temp))) {
+                dx = src_rect->x;
+                dy = src_rect->y;
+            }
+            else if (pg_TwoIntsFromObj(argpos, &sx, &sy)) {
+                dx = sx;
+                dy = sy;
+            }
+            else
+                return RAISE(PyExc_TypeError,
+                            "invalid destination position for blit");
+
+            if (argrect && argrect != Py_None) {
+                if (!(src_rect = pgRect_FromObject(argrect, &temp)))
+                    return RAISE(PyExc_TypeError, "Invalid rectstyle argument");
+            }
+            else {
+                temp.x = temp.y = 0;
+                temp.w = src->w;
+                temp.h = src->h;
+                src_rect = &temp;
+            }
+
+            dest_rect.x = dx;
+            dest_rect.y = dy;
+            dest_rect.w = src_rect->w;
+            dest_rect.h = src_rect->h;
+        }
     }
     else {
-        temp.x = temp.y = 0;
-        temp.w = src->w;
-        temp.h = src->h;
-        src_rect = &temp;
-    }
 
-    dest_rect.x = dx;
-    dest_rect.y = dy;
-    dest_rect.w = src_rect->w;
-    dest_rect.h = src_rect->h;
+        static char *kwids[] = {"source", "dest", "area", "special_flags", "anchor", NULL};
+
+        if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O|OiO", kwids,
+                                            &pgSurface_Type, &srcobject, &argpos,
+                                            &argrect, &blend_flags, &anchor))
+                return NULL;
+
+        src = pgSurface_AsSurface(srcobject);
+        SURF_INIT_CHECK(src)
+        SURF_INIT_CHECK(dest)
+
+        if ((src_rect = pgRect_FromObject(argpos, &temp))) {
+            dx = src_rect->x;
+            dy = src_rect->y;
+        }
+        else if (pg_TwoIntsFromObj(argpos, &sx, &sy)) {
+            dx = sx;
+            dy = sy;
+        }
+        else
+            return RAISE(PyExc_TypeError,
+                        "invalid destination position for blit");
+
+        if (argrect && argrect != Py_None) {
+            if (!(src_rect = pgRect_FromObject(argrect, &temp)))
+                return RAISE(PyExc_TypeError, "Invalid rectstyle argument");
+        }
+        else {
+            temp.x = temp.y = 0;
+            temp.w = src->w;
+            temp.h = src->h;
+            src_rect = &temp;
+        }
+
+        if (anchor == NULL) {
+            dest_rect.x = dx;
+            dest_rect.y = dy;
+            dest_rect.w = src_rect->w;
+            dest_rect.h = src_rect->h;
+        } else {
+            rect = pgRect_New4(dx, dy, src_rect->w, src_rect->h);
+            PyObject_SetAttr(rect, anchor, Py_BuildValue("(ii)", dx, dy));
+            dest_rect = pgRect_AsRect(rect);
+        }
+    }
 
     if (!blend_flags)
         blend_flags = 0;
