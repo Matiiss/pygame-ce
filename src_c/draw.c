@@ -99,7 +99,7 @@ draw_round_rect(SDL_Surface *surf, int x1, int y1, int x2, int y2, int radius,
  * Returns a Rect bounding the drawn area.
  */
 static PyObject *
-aaline(PyObject *self, PyObject *arg, PyObject *kwargs)
+aaline(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj, *start, *end;
@@ -171,7 +171,7 @@ aaline(PyObject *self, PyObject *arg, PyObject *kwargs)
  * Returns a Rect bounding the drawn area.
  */
 static PyObject *
-line(PyObject *self, PyObject *arg, PyObject *kwargs)
+line(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj, *start, *end;
@@ -239,7 +239,7 @@ line(PyObject *self, PyObject *arg, PyObject *kwargs)
  * Returns a Rect bounding the drawn area.
  */
 static PyObject *
-aalines(PyObject *self, PyObject *arg, PyObject *kwargs)
+aalines(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj;
@@ -375,7 +375,7 @@ aalines(PyObject *self, PyObject *arg, PyObject *kwargs)
  * Returns a Rect bounding the drawn area.
  */
 static PyObject *
-lines(PyObject *self, PyObject *arg, PyObject *kwargs)
+lines(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj;
@@ -492,7 +492,7 @@ lines(PyObject *self, PyObject *arg, PyObject *kwargs)
 }
 
 static PyObject *
-arc(PyObject *self, PyObject *arg, PyObject *kwargs)
+arc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj, *rectobj;
@@ -566,7 +566,7 @@ arc(PyObject *self, PyObject *arg, PyObject *kwargs)
 }
 
 static PyObject *
-ellipse(PyObject *self, PyObject *arg, PyObject *kwargs)
+ellipse(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj, *rectobj;
@@ -738,7 +738,7 @@ circle(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-polygon(PyObject *self, PyObject *arg, PyObject *kwargs)
+polygon(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     pgSurfaceObject *surfobj;
     PyObject *colorobj, *points, *item = NULL;

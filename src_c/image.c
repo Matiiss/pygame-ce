@@ -91,7 +91,7 @@ image_load_basic(PyObject *self, PyObject *obj)
 }
 
 static PyObject *
-image_load_extended(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_load_extended(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     if (extloadobj == NULL)
         return RAISE(PyExc_NotImplementedError,
@@ -101,7 +101,7 @@ image_load_extended(PyObject *self, PyObject *arg, PyObject *kwarg)
 }
 
 static PyObject *
-image_load(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_load(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     PyObject *obj;
     const char *name = NULL;
@@ -125,7 +125,7 @@ image_load(PyObject *self, PyObject *arg, PyObject *kwarg)
 #endif
 
 static PyObject *
-image_save_extended(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_save_extended(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     if (extsaveobj == NULL)
         return RAISE(PyExc_NotImplementedError,
@@ -135,7 +135,7 @@ image_save_extended(PyObject *self, PyObject *arg, PyObject *kwarg)
 }
 
 static PyObject *
-image_save(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_save(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     pgSurfaceObject *surfobj;
     PyObject *obj;
@@ -484,7 +484,7 @@ tobytes_surf_32bpp(SDL_Surface *surf, int flipped, int hascolorkey,
 }
 
 PyObject *
-image_tobytes(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_tobytes(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     pgSurfaceObject *surfobj;
     PyObject *bytes = NULL;
@@ -1027,7 +1027,7 @@ image_tobytes(PyObject *self, PyObject *arg, PyObject *kwarg)
 }
 
 PyObject *
-image_frombytes(PyObject *self, PyObject *arg, PyObject *kwds)
+image_frombytes(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *bytes;
     char *format, *data;
@@ -1216,7 +1216,7 @@ image_frombytes(PyObject *self, PyObject *arg, PyObject *kwds)
 }
 
 PyObject *
-image_tostring(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_tostring(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "pygame.image.tostring deprecated since 2.3.0",
@@ -1228,7 +1228,7 @@ image_tostring(PyObject *self, PyObject *arg, PyObject *kwarg)
 }
 
 PyObject *
-image_fromstring(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_fromstring(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "pygame.image.fromstring deprecated since 2.3.0",
@@ -1267,7 +1267,7 @@ pgObject_AsCharBuffer(PyObject *obj, const char **buffer,
 }
 
 PyObject *
-image_frombuffer(PyObject *self, PyObject *arg, PyObject *kwds)
+image_frombuffer(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *buffer;
     char *format, *data;

@@ -833,7 +833,7 @@ _get_display(SDL_Window *win)
 }
 
 static PyObject *
-pg_set_mode(PyObject *self, PyObject *arg, PyObject *kwds)
+pg_set_mode(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static const char *const DefaultTitle = "pygame window";
 
@@ -2656,7 +2656,7 @@ pg_get_allow_screensaver(PyObject *self)
 }
 
 static PyObject *
-pg_set_allow_screensaver(PyObject *self, PyObject *arg, PyObject *kwargs)
+pg_set_allow_screensaver(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int val = 1;
     static char *keywords[] = {"value", NULL};

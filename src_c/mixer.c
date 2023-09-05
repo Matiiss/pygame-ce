@@ -1777,7 +1777,7 @@ _chunk_from_array(void *buf, PG_sample_format_t view_format, int ndim,
 }
 
 static int
-sound_init(PyObject *self, PyObject *arg, PyObject *kwarg)
+sound_init(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     static const char arg_cnt_err_msg[] =
         "Sound takes either 1 positional or 1 keyword argument";

@@ -57,7 +57,7 @@ camera_stop(pgCameraObject *self, PyObject *args);
 PyObject *
 camera_get_controls(pgCameraObject *self, PyObject *args);
 PyObject *
-camera_set_controls(pgCameraObject *self, PyObject *arg, PyObject *kwds);
+camera_set_controls(pgCameraObject *self, PyObject *args, PyObject *kwds);
 PyObject *
 camera_get_size(pgCameraObject *self, PyObject *args);
 PyObject *
@@ -285,7 +285,7 @@ camera_get_controls(pgCameraObject *self, PyObject *_null)
 
 /* set_controls() - changes camera settings if supported by the camera */
 PyObject *
-camera_set_controls(pgCameraObject *self, PyObject *arg, PyObject *kwds)
+camera_set_controls(pgCameraObject *self, PyObject *args, PyObject *kwds)
 {
 #if defined(__unix__)
     int hflip = 0, vflip = 0, brightness = 0;
@@ -1800,7 +1800,7 @@ PyObject* camera_getattr(PyObject* self, char* attrname) {
 */
 
 static int
-camera_init(pgCameraObject *self, PyObject *arg, PyObject *kwargs)
+camera_init(pgCameraObject *self, PyObject *args, PyObject *kwargs)
 {
 #if defined(__unix__)
     int w, h;

@@ -233,7 +233,7 @@ window_set_icon(pgWindowObject *self, PyObject *arg)
 }
 
 static int
-window_set_grab(pgWindowObject *self, PyObject *arg, void *v)
+window_set_grab(pgWindowObject *self, PyObject *args, void *v)
 {
     int enable = PyObject_IsTrue(arg);
     if (enable == -1)
@@ -251,7 +251,7 @@ window_get_grab(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_title(pgWindowObject *self, PyObject *arg, void *v)
+window_set_title(pgWindowObject *self, PyObject *args, void *v)
 {
     const char *title;
     if (!PyUnicode_Check(arg)) {
@@ -272,7 +272,7 @@ window_get_title(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_resizable(pgWindowObject *self, PyObject *arg, void *v)
+window_set_resizable(pgWindowObject *self, PyObject *args, void *v)
 {
     int enable = PyObject_IsTrue(arg);
     if (enable == -1)
@@ -291,7 +291,7 @@ window_get_resizable(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_borderless(pgWindowObject *self, PyObject *arg, void *v)
+window_set_borderless(pgWindowObject *self, PyObject *args, void *v)
 {
     int enable = PyObject_IsTrue(arg);
     if (enable == -1)
@@ -310,7 +310,7 @@ window_get_borderless(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_always_on_top(pgWindowObject *self, PyObject *arg, void *v)
+window_set_always_on_top(pgWindowObject *self, PyObject *args, void *v)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 16)
     int enable = PyObject_IsTrue(arg);
@@ -346,7 +346,7 @@ window_get_window_id(pgWindowObject *self, PyObject *_null)
 }
 
 static int
-window_set_size(pgWindowObject *self, PyObject *arg, void *v)
+window_set_size(pgWindowObject *self, PyObject *args, void *v)
 {
     int w, h;
 
@@ -377,7 +377,7 @@ window_get_size(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_minimum_size(pgWindowObject *self, PyObject *arg, void *v)
+window_set_minimum_size(pgWindowObject *self, PyObject *args, void *v)
 {
     int w, h;
     int max_w, max_h;
@@ -417,7 +417,7 @@ window_get_minimum_size(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_maximum_size(pgWindowObject *self, PyObject *arg, void *v)
+window_set_maximum_size(pgWindowObject *self, PyObject *args, void *v)
 {
     int w, h;
     int min_w, min_h;
@@ -457,7 +457,7 @@ window_get_maximum_size(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_position(pgWindowObject *self, PyObject *arg, void *v)
+window_set_position(pgWindowObject *self, PyObject *args, void *v)
 {
     int x, y;
 
@@ -488,7 +488,7 @@ window_get_position(pgWindowObject *self, void *v)
 }
 
 static int
-window_set_opacity(pgWindowObject *self, PyObject *arg, void *v)
+window_set_opacity(pgWindowObject *self, PyObject *args, void *v)
 {
     float opacity;
     opacity = (float)PyFloat_AsDouble(arg);
@@ -529,7 +529,7 @@ mouse_get_relative_mode(pgWindowObject *self, void *v)
 }
 
 static int
-mouse_set_relative_mode(pgWindowObject *self, PyObject *arg, void *v)
+mouse_set_relative_mode(pgWindowObject *self, PyObject *args, void *v)
 {
     SDL_bool mode = SDL_FALSE;
     if (PyObject_IsTrue(arg)) {

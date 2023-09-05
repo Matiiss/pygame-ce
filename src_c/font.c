@@ -882,7 +882,7 @@ font_set_script(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
-font_set_direction(PyObject *self, PyObject *arg, PyObject *kwarg)
+font_set_direction(PyObject *self, PyObject *args, PyObject *kwarg)
 {
 /* Can't use SDL_TTF_VERSION_ATLEAST until SDL_ttf 2.0.15 is minimum supported
  */

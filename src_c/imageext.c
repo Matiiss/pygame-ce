@@ -92,7 +92,7 @@ iext_find_extension(char *fullname)
 }
 
 static PyObject *
-image_load_ext(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_load_ext(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     PyObject *obj;
     PyObject *final;
@@ -333,7 +333,7 @@ pg_SavePNG(SDL_Surface *surface, const char *file)
 #endif /* end if PNG_H */
 
 static PyObject *
-image_save_ext(PyObject *self, PyObject *arg, PyObject *kwarg)
+image_save_ext(PyObject *self, PyObject *args, PyObject *kwarg)
 {
     pgSurfaceObject *surfobj;
     PyObject *obj;

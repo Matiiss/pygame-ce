@@ -505,7 +505,7 @@ typedef struct {
 
 // to be called by the other tick functions.
 static PyObject *
-clock_tick_base(pgClockObject *self, PyObject *arg, int use_accurate_delay)
+clock_tick_base(pgClockObject *self, PyObject *args, int use_accurate_delay)
 {
     float framerate = 0.0f;
     Uint64 nowtime;
