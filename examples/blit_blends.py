@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.blit_blends
+"""pygame.examples.blit_blends
 
 Blending colors in different ways with different blend modes.
 
@@ -19,6 +19,7 @@ Keyboard Controls
 * 1, 2, 3, 4 - use different images.
 
 """
+
 import os
 import pygame
 import time
@@ -51,9 +52,9 @@ def main():
 
     images = {}
     images[pygame.K_1] = im2
-    images[pygame.K_2] = pygame.image.load(os.path.join(data_dir, "chimp.png"))
+    images[pygame.K_2] = pygame.image.load(os.path.join(data_dir, "chimp.webp"))
     images[pygame.K_3] = pygame.image.load(os.path.join(data_dir, "alien3.gif"))
-    images[pygame.K_4] = pygame.image.load(os.path.join(data_dir, "liquid.bmp"))
+    images[pygame.K_4] = pygame.image.load(os.path.join(data_dir, "liquid.webp"))
     img_to_blit = im2.convert()
     iaa = img_to_blit.convert_alpha()
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.pixelarray
+"""pygame.examples.pixelarray
 
 PixelArray does array processing of pixels.
 Sort of like another array processor called 'numpy' - But for pixels.
@@ -13,6 +13,7 @@ Controls
 
 To see different effects - press a key or click a mouse.
 """
+
 import os
 import pygame
 
@@ -72,7 +73,7 @@ def main():
     show(surface)
 
     # Manipulate the image. Flip it around the y axis.
-    surface = pygame.image.load(os.path.join(data_dir, "arraydemo.bmp"))
+    surface = pygame.image.load(os.path.join(data_dir, "arraydemo.webp"))
     ar = pygame.PixelArray(surface)
     ar[:] = ar[:, ::-1]
     del ar
@@ -106,7 +107,7 @@ def main():
     show(surface2)
 
     # Scale it by throwing each second pixel away.
-    surface = pygame.image.load(os.path.join(data_dir, "arraydemo.bmp"))
+    surface = pygame.image.load(os.path.join(data_dir, "arraydemo.webp"))
     ar = pygame.PixelArray(surface)
     sf2 = ar[::2, ::2].make_surface()
     del ar
@@ -119,7 +120,7 @@ def main():
     show(surface)
 
     # Extract anything which might be somewhat black.
-    surface = pygame.image.load(os.path.join(data_dir, "arraydemo.bmp"))
+    surface = pygame.image.load(os.path.join(data_dir, "arraydemo.webp"))
     ar = pygame.PixelArray(surface)
     ar2 = ar.extract((0, 0, 0), 0.07)
     sf2 = ar2.surface

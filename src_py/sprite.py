@@ -84,6 +84,7 @@ Sprites are not thread safe, so lock them yourself if using threads.
 # specific ones that aren't quite so general but fit into common
 # specialized cases.
 
+import types
 from warnings import warn
 from typing import Optional
 
@@ -371,6 +372,9 @@ class AbstractGroup:
 
     """
 
+    def __class_getitem__(cls, generic):
+        return types.GenericAlias(cls, generic)
+
     # protected identifier value to identify sprite groups, and avoid infinite recursion
     _spritegroup = True
 
@@ -410,8 +414,7 @@ class AbstractGroup:
 
         :param sprite: The sprite we are removing.
         """
-        lost_rect = self.spritedict[sprite]
-        if lost_rect:
+        if lost_rect := self.spritedict[sprite]:
             self.lostsprites.append(lost_rect)
         del self.spritedict[sprite]
 
@@ -1126,9 +1129,7 @@ class LayeredDirty(LayeredUpdates):
 
         LayeredUpdates.add_internal(self, sprite, layer)
 
-    def draw(
-        self, surface, bgd=None
-    ):  # noqa pylint: disable=arguments-differ; unable to change public interface
+    def draw(self, surface, bgd=None):  # noqa pylint: disable=arguments-differ; unable to change public interface
         """draw all sprites in the right order onto the given surface
 
         LayeredDirty.draw(surface, bgd=None): return Rect_list
