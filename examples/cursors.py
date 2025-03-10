@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.cursors
+"""pygame.examples.cursors
 Click a button and the cursor will change.
 This example will show you:
 *The different types of cursors that exist
@@ -29,7 +29,7 @@ color_cursor = pygame.cursors.Cursor((20, 20), surf)
 # Create a color cursor with an image surface
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
-image_name = os.path.join(main_dir, "data", "cursor.png")
+image_name = os.path.join(main_dir, "data", "cursor.webp")
 image = pygame.image.load(image_name)
 image_cursor = pygame.cursors.Cursor(
     (image.get_width() // 2, image.get_height() // 2), image

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.testsprite
+"""pygame.examples.testsprite
 
 Like the testsprite.c that comes with libsdl, this pygame version shows
 lots of sprites moving around.
@@ -7,8 +7,9 @@ lots of sprites moving around.
 It is an abomination of ugly code, and mostly used for testing.
 
 
-See pygame.examples.aliens for some prettyier code.
+See pygame.examples.aliens for some prettier code.
 """
+
 import sys
 import os
 
@@ -104,8 +105,8 @@ class Static(pygame.sprite.DirtySprite):
         pygame.sprite.DirtySprite.__init__(self)
         self.image = Static.images[0]
         self.rect = self.image.get_rect()
-        self.rect.x = randint(0, 3 * screen_dims[0] / 4)
-        self.rect.y = randint(0, 3 * screen_dims[1] / 4)
+        self.rect.x = randint(0, int(3 * screen_dims[0] / 4))
+        self.rect.y = randint(0, int(3 * screen_dims[1] / 4))
 
 
 def main(
@@ -148,7 +149,7 @@ def main(
     screen.fill([0, 0, 0])
     pygame.display.flip()
     sprite_surface = pygame.image.load(os.path.join(data_dir, "asprite.bmp"))
-    sprite_surface2 = pygame.image.load(os.path.join(data_dir, "static.png"))
+    sprite_surface2 = pygame.image.load(os.path.join(data_dir, "static.webp"))
 
     if use_rle:
         sprite_surface.set_colorkey(

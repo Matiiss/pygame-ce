@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-""" pygame.examples.chimp
+"""pygame.examples.chimp
 
 This simple example is used for the line-by-line tutorial
 that comes with pygame. It is based on a 'popular' web banner.
 Note there are comments here, but for the full explanation,
 follow along in the tutorial.
 """
-
 
 # Import Modules
 import os
@@ -27,9 +26,7 @@ def load_image(name, colorkey=None, scale=1):
     image = pygame.image.load(fullname)
     image = image.convert()
 
-    size = image.get_size()
-    size = (size[0] * scale, size[1] * scale)
-    image = pygame.transform.scale(image, size)
+    image = pygame.transform.scale_by(image, scale)
 
     if colorkey is not None:
         if colorkey == -1:
@@ -43,7 +40,7 @@ def load_sound(name):
         def play(self):
             pass
 
-    if not pygame.mixer or not pygame.mixer.get_init():
+    if not pygame.mixer.get_init():
         return NoneSound()
 
     fullname = os.path.join(data_dir, name)
@@ -58,7 +55,7 @@ class Fist(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
-        self.image, self.rect = load_image("fist.png", -1)
+        self.image, self.rect = load_image("fist.webp", -1)
         self.fist_offset = (-235, -80)
         self.punching = False
 
@@ -88,7 +85,7 @@ class Chimp(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
-        self.image, self.rect = load_image("chimp.png", -1, 4)
+        self.image, self.rect = load_image("chimp.webp", -1, 4)
         screen = pygame.display.get_surface()
         self.area = screen.get_rect()
         self.rect.topleft = 10, 90
@@ -147,11 +144,10 @@ def main():
     background.fill((170, 238, 187))
 
     # Put Text On The Background, Centered
-    if pygame.font:
-        font = pygame.Font(None, 64)
-        text = font.render("Pummel The Chimp, And Win $$$", True, (10, 10, 10))
-        textpos = text.get_rect(centerx=background.get_width() / 2, y=10)
-        background.blit(text, textpos)
+    font = pygame.Font(None, 64)
+    text = font.render("Pummel The Chimp, And Win $$$", True, (10, 10, 10))
+    textpos = text.get_rect(centerx=background.get_width() / 2, y=10)
+    background.blit(text, textpos)
 
     # Display The Background
     screen.blit(background, (0, 0))
@@ -162,7 +158,7 @@ def main():
     punch_sound = load_sound("punch.wav")
     chimp = Chimp()
     fist = Fist()
-    allsprites = pygame.sprite.RenderPlain((chimp, fist))
+    all_sprites = pygame.sprite.Group(chimp, fist)
     clock = pygame.Clock()
 
     # Main Loop
@@ -185,11 +181,11 @@ def main():
             elif event.type == pygame.MOUSEBUTTONUP:
                 fist.unpunch()
 
-        allsprites.update()
+        all_sprites.update()
 
         # Draw Everything
         screen.blit(background, (0, 0))
-        allsprites.draw(screen)
+        all_sprites.draw(screen)
         pygame.display.flip()
 
     pygame.quit()

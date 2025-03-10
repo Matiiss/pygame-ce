@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.liquid
+"""pygame.examples.liquid
 
 This example demonstrates a simplish water effect of an
 image. It attempts to create a hardware display surface that
@@ -16,7 +16,6 @@ sound stuff, that's an easy enough challenge for the reader :]
 import pygame
 import os
 from math import sin
-import time
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
@@ -27,7 +26,7 @@ def main():
     screen = pygame.display.set_mode((640, 480), pygame.DOUBLEBUF)
 
     # load image and quadruple
-    imagename = os.path.join(main_dir, "data", "liquid.bmp")
+    imagename = os.path.join(main_dir, "data", "liquid.webp")
     bitmap = pygame.image.load(imagename)
     bitmap = pygame.transform.scale2x(bitmap)
     bitmap = pygame.transform.scale2x(bitmap)
@@ -44,10 +43,15 @@ def main():
     # mainloop
     xblocks = range(0, 640, 20)
     yblocks = range(0, 480, 20)
-    stopevents = pygame.QUIT, pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN
+    stop_events = pygame.QUIT, pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN
+
+    clock = pygame.Clock()
+
     while True:
-        for e in pygame.event.get():
-            if e.type in stopevents:
+        clock.tick(60)
+
+        for event in pygame.event.get():
+            if event.type in stop_events:
                 return
 
         anim = anim + 0.02
@@ -58,7 +62,6 @@ def main():
                 screen.blit(bitmap, (x, y), (xpos, ypos, 20, 20))
 
         pygame.display.flip()
-        time.sleep(0.01)
 
 
 if __name__ == "__main__":
