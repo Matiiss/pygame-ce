@@ -18,6 +18,10 @@ So, users will have to say goodbye to their old companion
 
 and the `PYGAME_HIDE_SUPPORT_PROMPT` environment variable.
 
+## Build System
+
+The legacy setup.py-based buildconfig has been removed; the meson-python
+build backend has been the only supported build system for some time.
 
 ## Miscellaneous Function Changes
 

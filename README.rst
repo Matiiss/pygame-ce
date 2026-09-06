@@ -102,8 +102,8 @@ or you want to contribute to pygame-ce, you will need to build pygame-ce
 locally from its source code, rather than pip installing it.
 
 Installing from source is fairly automated. The most work will
-involve compiling and installing all the pygame dependencies.  Once
-that is done, run the ``pip install .`` script which will attempt to
+involve compiling and installing all the pygame dependencies. Once
+that is done, run ``pip install .``, which will attempt to
 auto-configure, build, and install pygame.
 
 Much more information about installing and compiling is available
@@ -173,8 +173,8 @@ See docs/licenses for licenses of dependencies.
 
 .. |Python3| image:: https://img.shields.io/badge/python-3-blue.svg?v=1
 
-.. |GithubCommits| image:: https://img.shields.io/github/commits-since/pygame-community/pygame-ce/2.5.7.svg
-   :target: https://github.com/pygame-community/pygame-ce/compare/2.5.7...main
+.. |GithubCommits| image:: https://img.shields.io/github/commits-since/pygame-community/pygame-ce/2.5.8.svg
+   :target: https://github.com/pygame-community/pygame-ce/compare/2.5.8...main
 
 .. |DocsStatus| image:: https://img.shields.io/website?down_message=offline&label=docs&up_message=online&url=https%3A%2F%2Fpyga.me%2Fdocs%2F
    :target: https://pyga.me/docs/
