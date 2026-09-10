@@ -1,14 +1,15 @@
-.. image:: https://raw.githubusercontent.com/pygame-community/pygame-ce/main/docs/reST/_static/pygame_logo.svg
+.. image:: https://raw.githubusercontent.com/pygame-community/pygame-ce/main/docs/reST/_static/pygame_ce_logo.svg
+  :width: 800
   :alt: pygame
   :target: https://pyga.me/
 
 
-|DocsStatus| 
+|DocsStatus|
 |PyPiVersion| |PyPiLicense|
 |Python3| |GithubCommits| |BlackFormatBadge|
+|DiscordBadge|
 
-**English** `简体中文`_ `Français`_ `فارسی`_ `Español`_
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Pygame_ is a free and open-source cross-platform library
 for the development of multimedia applications like video games using Python.
@@ -29,10 +30,49 @@ New contributors are welcome!
 Installation
 ------------
 
+To install pygame-ce, first make sure you have Python (and pip) installed and available on your PATH.
+Then, run the following command in your terminal or command prompt:
+
 ::
 
    pip install pygame-ce
 
+Note that on some platforms you may need to use ``pip3`` instead of ``pip``.
+
+Linux Note: "Breaking System Packages" Error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On some Linux distributions (like Ubuntu or Debian), installing Python packages with ``pip`` can trigger a message like the following:
+
+::
+
+   error: externally-managed-environment
+   This environment is externally managed when system packages are installed.
+
+This means your system Python is managed by the OS, and using ``pip3`` globally might interfere with system packages.
+
+Recommended Solutions
+^^^^^^^^^^^^^^^^^^^^^
+
+1. Use ``venv`` (Virtual Environment):
+
+   You can create a virtual environment and install pygame-ce within it.
+   This way you still use system Python but create a separate environment for installed packages so that they do not conflict with or break system ones.
+
+   .. code-block:: bash
+
+      python3 -m venv venv      # create a venv named 'venv'
+      source venv/bin/activate  # activate venv
+      pip install pygame-ce     # install packages in venv
+
+2. Use ``pyenv`` (User-level Python management):
+
+   `pyenv <https://github.com/pyenv/pyenv>`_ lets you install and manage your own Python versions at the user level without touching the system one.
+   As a plus, you can install and use multiple Python versions side by side.
+
+3. Use ``uv`` (Fast Modern Package Installer):
+
+   `uv <https://docs.astral.sh/uv/>`_ is a modern, fast Python package and environment manager that can serve as a replacement for both ``venv`` and ``pyenv``.
 
 Help
 ----
@@ -47,7 +87,7 @@ locally, it'll launch the online website instead.
 
 The online documentation stays up to date with the development version
 of pygame on github.  This may be a bit newer than the version of pygame
-you are using. To upgrade to the latest full release, run 
+you are using. To upgrade to the latest full release, run
 ``pip install pygame-ce --upgrade`` in your terminal.
 
 Best of all, the examples directory has many playable small programs
@@ -62,68 +102,13 @@ or you want to contribute to pygame-ce, you will need to build pygame-ce
 locally from its source code, rather than pip installing it.
 
 Installing from source is fairly automated. The most work will
-involve compiling and installing all the pygame dependencies.  Once
-that is done, run the ``setup.py`` script which will attempt to
+involve compiling and installing all the pygame dependencies. Once
+that is done, run ``pip install .``, which will attempt to
 auto-configure, build, and install pygame.
 
 Much more information about installing and compiling is available
 on the `Compilation wiki page`_.
 
-
-Credits
--------
-
-Thanks to everyone who has helped contribute to this library.
-Special thanks are also in order.
-
-* Marcus Von Appen: many changes, and fixes, 1.7.1+ freebsd maintainer
-* Lenard Lindstrom: the 1.8+ windows maintainer, many changes, and fixes
-* Brian Fisher for svn auto builder, bug tracker and many contributions
-* Rene Dudfield: many changes, and fixes, 1.7+ release manager/maintainer
-* Phil Hassey for his work on the pygame.org website
-* DR0ID for his work on the sprite module
-* Richard Goedeken for his smoothscale function
-* Ulf Ekström for his pixel perfect collision detection code
-* Pete Shinners: original author
-* David Clark for filling the right-hand-man position
-* Ed Boraas and Francis Irving: Debian packages
-* Maxim Sobolev: FreeBSD packaging
-* Bob Ippolito: macOS and OS X porting (much work!)
-* Jan Ekhol, Ray Kelm, and Peter Nicolai: putting up with early design ideas
-* Nat Pryce for starting our unit tests
-* Dan Richter for documentation work
-* TheCorruptor for his incredible logos and graphics
-* Nicholas Dudfield: many test improvements
-* Alex Folkner for pygame-ctypes
-
-Thanks to those sending in patches and fixes: Niki Spahiev, Gordon
-Tyler, Nathaniel Pryce, Dave Wallace, John Popplewell, Michael Urman,
-Andrew Straw, Michael Hudson, Ole Martin Bjoerndalen, Herve Cauwelier,
-James Mazer, Lalo Martins, Timothy Stranex, Chad Lester, Matthias
-Spiller, Bo Jangeborg, Dmitry Borisov, Campbell Barton, Diego Essaya,
-Eyal Lotem, Regis Desgroppes, Emmanuel Hainry, Randy Kaelber
-Matthew L Daniel, Nirav Patel, Forrest Voight, Charlie Nolan,
-Frankie Robertson, John Krukoff, Lorenz Quack, Nick Irvine,
-Michael George, Saul Spatz, Thomas Ibbotson, Tom Rothamel, Evan Kroske,
-Cambell Barton.
-
-And our bug hunters above and beyond: Angus, Guillaume Proux, Frank
-Raiser, Austin Henry, Kaweh Kazemi, Arturo Aldama, Mike Mulcheck,
-Michael Benfield, David Lau
-
-There's many more folks out there who've submitted helpful ideas, kept
-this project going, and basically made our life easier.  Thanks!
-
-Many thank you's for people making documentation comments, and adding to the
-`pygame documentation`_ and the `pygame-ce documentation`_.
-
-Also many thanks for people creating games and putting them on the
-pygame.org website for others to learn from and enjoy.
-
-Lots of thanks to James Paige for hosting the pygame bugzilla.
-
-Also a big thanks to Roger Dingledine and the crew at SEUL.ORG for our
-excellent hosting.
 
 Dependencies
 ------------
@@ -132,27 +117,39 @@ Pygame is obviously strongly dependent on SDL and Python. It also
 links to and embeds several other smaller libraries. The font
 module relies on SDL_ttf, which is dependent on freetype. The mixer
 (and mixer.music) modules depend on SDL_mixer. The image module
-depends on SDL_image. Transform.rotozoom has an embedded version 
+depends on SDL_image. Transform.rotozoom has an embedded version
 of SDL_rotozoom, and gfxdraw has an embedded version of SDL_gfx.
 Dependency versions:
 
 
 +----------+------------------------+
-| CPython  | >= 3.8 (Or use PyPy3)  |
+| CPython  | >= 3.10 (Or use PyPy3) |
 +----------+------------------------+
-| SDL      | >= 2.0.10              |
+| SDL      | >= 2.0.20              |
 +----------+------------------------+
 | SDL_mixer| >= 2.0.4               |
 +----------+------------------------+
-| SDL_image| >= 2.0.4               |
+| SDL_image| >= 2.0.5               |
 +----------+------------------------+
-| SDL_ttf  | >= 2.0.15              |
+| SDL_ttf  | >= 2.0.18              |
 +----------+------------------------+
 
+How to Contribute
+-----------------
+First of all, thank you for considering contributing to pygame-ce! It's people like you that make pygame-ce a great library. Please follow these steps to get started:
 
+1. Read the `Contribution Guidelines`_ and the `Many Ways to Contribute`_ wiki pages.
+2. Read the documentation on `Opening A Pull Request`_ and `Opening a Great Pull Request`_.
+3. Read how to `label and link reported issues`_.
+4. Check the `issue tracker`_ for open issues that interest you or open a new issue to start a discussion about your idea.
+
+There are many more resources throughout the `wiki pages`_ that can help you get started.
+
+If you have any questions, please feel free to ask in the `Pygame Community Discord Server`_ or open an issue.
 
 License
 -------
+**License Identifier:** LGPL-2.1-or-later
 
 This library is distributed under `GNU LGPL version 2.1`_, which can
 be found in the file ``docs/LGPL.txt``.  We reserve the right to place
@@ -176,24 +173,28 @@ See docs/licenses for licenses of dependencies.
 
 .. |Python3| image:: https://img.shields.io/badge/python-3-blue.svg?v=1
 
-.. |GithubCommits| image:: https://img.shields.io/github/commits-since/pygame-community/pygame-ce/2.3.0.svg
-   :target: https://github.com/pygame-community/pygame-ce/compare/2.3.0...main
+.. |GithubCommits| image:: https://img.shields.io/github/commits-since/pygame-community/pygame-ce/2.5.8.svg
+   :target: https://github.com/pygame-community/pygame-ce/compare/2.5.8...main
 
 .. |DocsStatus| image:: https://img.shields.io/website?down_message=offline&label=docs&up_message=online&url=https%3A%2F%2Fpyga.me%2Fdocs%2F
    :target: https://pyga.me/docs/
-   
+
 .. |BlackFormatBadge| image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
+.. |DiscordBadge| image:: https://discord.com/api/guilds/772505616680878080/widget.png
+   :target: https://pyga.me/discord
+
 .. _Pygame: https://pyga.me
-.. _pygame-ce documentation: https://pyga.me/docs/
-.. _pygame documentation: https://www.pygame.org/docs/
 .. _Simple DirectMedia Layer library: https://www.libsdl.org
 .. _Compilation wiki page: https://github.com/pygame-community/pygame-ce/wiki#compiling
 .. _docs page: https://pyga.me/docs
 .. _GNU LGPL version 2.1: https://www.gnu.org/copyleft/lesser.html
-
-.. _简体中文: ./docs/readmes/README.zh-cn.rst
-.. _Français: ./docs/readmes/README.fr.rst
-.. _فارسی: ./docs/readmes/README.fa.rst
-.. _Español: ./docs/readmes/README.es.rst
+.. _Contribution Guidelines: https://github.com/pygame-community/pygame-ce/wiki/Contribution-guidelines
+.. _Many Ways to Contribute: https://github.com/pygame-community/pygame-ce/wiki/Many-ways-to-contribute
+.. _Opening A Pull Request: https://github.com/pygame-community/pygame-ce/wiki/Opening-a-pull-request
+.. _Opening a Great Pull Request: https://github.com/pygame-community/pygame-ce/wiki/Opening-a-great-pull-request
+.. _issue tracker: https://github.com/pygame-community/pygame-ce/issues
+.. _label and link reported issues: https://github.com/pygame-community/pygame-ce/wiki/Labelling-&-linking-reported-issues
+.. _Pygame Community Discord Server: https://pyga.me/discord
+.. _wiki pages: https://github.com/pygame-community/pygame-ce/wiki

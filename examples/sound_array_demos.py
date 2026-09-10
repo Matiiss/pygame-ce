@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.sound_array_demos
+"""pygame.examples.sound_array_demos
 
 Creates an echo effect on any Sound object.
 
@@ -13,11 +13,12 @@ version 2. changes:
 - put into a function.
 - Uses numpy by default, but falls back on Numeric.
 """
+
 import os
-import pygame
-from numpy import zeros, int32, int16
 import time
 
+import pygame
+from numpy import int16, int32, zeros
 
 # pygame.mixer.init(44100, -16, 0)
 pygame.mixer.init()

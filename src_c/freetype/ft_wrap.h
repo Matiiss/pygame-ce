@@ -23,7 +23,7 @@
 
 #define PYGAME_FREETYPE_INTERNAL
 #include "../_pygame.h"
-#include "../freetype.h"
+#include "ft_freetype.h"
 
 /**********************************************************
  * Internal module defines
@@ -41,8 +41,8 @@
 #define FX6_TRUNC(x) ((x) >> 6)
 #define FX16_CEIL_TO_FX6(x) (((x) + 1023L) >> 10)
 #define FX16_ROUND_TO_INT(x) (((x) + 32768L) >> 16)
-#define INT_TO_FX6(i) ((FT_Fixed)((i) << 6))
-#define INT_TO_FX16(i) ((FT_Fixed)((i) << 16))
+#define INT_TO_FX6(i) ((FT_Fixed)((unsigned long long)(i) << 6))
+#define INT_TO_FX16(i) ((FT_Fixed)((unsigned long long)(i) << 16))
 #define FX16_TO_DBL(x) ((x) * 1.52587890625e-5 /* 2.0^-16 */)
 #define DBL_TO_FX16(d) ((FT_Fixed)((d) * 65536.0))
 #define FX6_TO_DBL(x) ((x) * 1.5625e-2 /* 2.0^-6 */)
@@ -200,7 +200,8 @@ typedef struct fontsurface_ {
     int item_stride;
     int pitch;
 
-    SDL_PixelFormat *format;
+    PG_PixelFormat *format;
+    SDL_Palette *palette;
 
     FontRenderPtr render_gray;
     FontRenderPtr render_mono;
@@ -215,7 +216,7 @@ typedef struct fontinternals_ {
 
 typedef struct PGFT_String_ {
     Py_ssize_t length;
-    PGFT_char data[1];
+    PGFT_char data[];
 } PGFT_String;
 
 #if defined(PGFT_DEBUG_CACHE)
@@ -432,6 +433,7 @@ _PGFT_GetFontSized(FreeTypeInstance *, pgFontObject *, Scale_t);
 void
 _PGFT_BuildScaler(pgFontObject *, FTC_Scaler, Scale_t);
 #define _PGFT_malloc PyMem_Malloc
+#define _PGFT_calloc PyMem_Calloc
 #define _PGFT_free PyMem_Free
 
 #endif

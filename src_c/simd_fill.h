@@ -21,11 +21,6 @@
 #endif
 #endif
 
-#if PG_ENABLE_ARM_NEON
-// sse2neon.h is from here: https://github.com/DLTcollab/sse2neon
-#include "include/sse2neon.h"
-#endif /* PG_ENABLE_ARM_NEON */
-
 #if defined(__SSE2__)
 #define PG_ENABLE_SSE_NEON 1
 #elif PG_ENABLE_ARM_NEON
@@ -45,64 +40,84 @@ _pg_HasSSE_NEON();
 
 // AVX2 functions
 int
-surface_fill_blend_add_avx2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_add_avx2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_add_avx2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_add_avx2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 
 int
-surface_fill_blend_sub_avx2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_sub_avx2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_sub_avx2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_sub_avx2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_mult_avx2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_mult_avx2(SDL_Surface *surface,
+                             PG_PixelFormat *surface_format, SDL_Rect *rect,
                              Uint32 color);
 int
-surface_fill_blend_rgba_mult_avx2(SDL_Surface *surface, SDL_Rect *rect,
-                                  Uint32 color);
+surface_fill_blend_rgba_mult_avx2(SDL_Surface *surface,
+                                  PG_PixelFormat *surface_format,
+                                  SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_min_avx2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_min_avx2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_min_avx2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_min_avx2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_max_avx2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_max_avx2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_max_avx2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_max_avx2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 // SSE2 functions
 int
-surface_fill_blend_add_sse2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_add_sse2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_add_sse2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_add_sse2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_sub_sse2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_sub_sse2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_sub_sse2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_sub_sse2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_mult_sse2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_mult_sse2(SDL_Surface *surface,
+                             PG_PixelFormat *surface_format, SDL_Rect *rect,
                              Uint32 color);
 int
-surface_fill_blend_rgba_mult_sse2(SDL_Surface *surface, SDL_Rect *rect,
-                                  Uint32 color);
+surface_fill_blend_rgba_mult_sse2(SDL_Surface *surface,
+                                  PG_PixelFormat *surface_format,
+                                  SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_min_sse2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_min_sse2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_min_sse2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_min_sse2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);
 int
-surface_fill_blend_max_sse2(SDL_Surface *surface, SDL_Rect *rect,
+surface_fill_blend_max_sse2(SDL_Surface *surface,
+                            PG_PixelFormat *surface_format, SDL_Rect *rect,
                             Uint32 color);
 int
-surface_fill_blend_rgba_max_sse2(SDL_Surface *surface, SDL_Rect *rect,
-                                 Uint32 color);
+surface_fill_blend_rgba_max_sse2(SDL_Surface *surface,
+                                 PG_PixelFormat *surface_format,
+                                 SDL_Rect *rect, Uint32 color);

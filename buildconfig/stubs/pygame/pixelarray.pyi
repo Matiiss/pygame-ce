@@ -1,55 +1,107 @@
-from typing import Any, Dict, Tuple, Union, overload
+import sys
+from types import EllipsisType
+from typing import Any, TypeAlias, overload
 
+from pygame.color import Color
 from pygame.surface import Surface
+from pygame.typing import SequenceLike
 
-from ._common import ColorValue, Sequence
+_PixelColor: TypeAlias = int | Color | tuple[int, int, int] | tuple[int, int, int, int]
+_ArrayIndexAny: TypeAlias = int | slice | None | EllipsisType
+_ArrayIndexNoInt: TypeAlias = slice | None | EllipsisType
 
 class PixelArray:
-    surface: Surface
-    itemsize: int
-    ndim: int
-    shape: Tuple[int, ...]
-    strides: Tuple[int, ...]
+    @property
+    def surface(self) -> Surface: ...
+    @property
+    def itemsize(self) -> int: ...
+    @property
+    def ndim(self) -> int: ...
+    @property
+    def shape(self) -> tuple[int, ...]: ...
+    @property
+    def strides(self) -> tuple[int, ...]: ...
     # possibly going to be deprecated/removed soon, in which case these
     # typestubs must be removed too
-    __array_interface__: Dict[str, Any]
-    __array_struct__: Any
-    def __init__(self, surface: Surface) -> None: ...
+    @property
+    def __array_interface__(self) -> dict[str, Any]: ...
+    @property
+    def __array_struct__(self) -> Any: ...
+    if sys.version_info >= (3, 12):
+        def __buffer__(self, flags: int, /) -> memoryview[int]: ...
+    def __new__(cls, surface: Surface) -> PixelArray: ...
     def __enter__(self) -> PixelArray: ...
     def __exit__(self, *args, **kwargs) -> None: ...
     # if indexing into a 2D PixelArray, a 1D PixelArray will be returned
     # if indexing into a 1D PixelArray, an int will be returned
     @overload
-    def __getitem__(self, index: int) -> Union[PixelArray, int]: ...
+    def __getitem__(self, index: int) -> PixelArray | int: ...
     # complicated, but I'm pretty sure this is guaranteed to return a PixelArray or None
     # will only return None if the slice start and end are the same
     @overload
-    def __getitem__(self, index_range: slice) -> Union[PixelArray, None]: ...
+    def __getitem__(self, index_range: slice) -> PixelArray | None: ...
     # only valid for a 2D PixelArray
     @overload
-    def __getitem__(self, indices: Tuple[int, int]) -> int: ...
+    def __getitem__(self, indices: tuple[int, int]) -> int: ...
     # returns self
     @overload
-    def __getitem__(self, ell: ellipsis) -> PixelArray: ...
+    def __getitem__(self, ell: EllipsisType) -> PixelArray: ...
+    # if indexing into a 2D PixelArray, a 1D PixelArray will be set
+    # if indexing into a 1D PixelArray, an int will be set
+    @overload
+    def __setitem__(
+        self,
+        index: int,
+        value: PixelArray | int | _PixelColor | SequenceLike[_PixelColor],
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self,
+        index_range: slice,
+        value: PixelArray | SequenceLike[_PixelColor] | _PixelColor,
+    ) -> None: ...
+    # only valid for a 2D PixelArray
+    @overload
+    def __setitem__(
+        self, indices: tuple[int, int], value: int | _PixelColor
+    ) -> None: ...
+    @overload
+    def __setitem__(
+        self,
+        indices: (
+            tuple[_ArrayIndexAny]  # 1 item of any type
+            # 2 items with one that is not an int
+            | tuple[_ArrayIndexNoInt, _ArrayIndexAny]
+            | tuple[_ArrayIndexAny, _ArrayIndexNoInt]
+        ),
+        value: PixelArray | int | _PixelColor | SequenceLike[_PixelColor],
+    ) -> None: ...
+    # item assignment returns None
+    @overload
+    def __setitem__(
+        self,
+        ell: EllipsisType,
+        value: PixelArray | SequenceLike[_PixelColor] | _PixelColor,
+    ) -> None: ...
     def make_surface(self) -> Surface: ...
     def replace(
         self,
-        color: ColorValue,
-        repcolor: ColorValue,
+        color: _PixelColor,
+        repcolor: _PixelColor,
         distance: float = 0,
-        weights: Sequence[float] = (0.299, 0.587, 0.114),
+        weights: SequenceLike[float] = (0.299, 0.587, 0.114),
     ) -> None: ...
     def extract(
         self,
-        color: ColorValue,
+        color: _PixelColor,
         distance: float = 0,
-        weights: Sequence[float] = (0.299, 0.587, 0.114),
+        weights: SequenceLike[float] = (0.299, 0.587, 0.114),
     ) -> PixelArray: ...
     def compare(
         self,
         array: PixelArray,
         distance: float = 0,
-        weights: Sequence[float] = (0.299, 0.587, 0.114),
+        weights: SequenceLike[float] = (0.299, 0.587, 0.114),
     ) -> PixelArray: ...
     def transpose(self) -> PixelArray: ...
-    def close(self) -> PixelArray: ...
+    def close(self) -> None: ...

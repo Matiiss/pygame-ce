@@ -20,14 +20,11 @@
 */
 
 /* Handle clipboard text and data in arbitrary formats */
-#include <limits.h>
-#include <stdio.h>
-
-#include "SDL.h"
-
-#include "SDL_syswm.h"
-
 #include "pygame.h"
+
+#ifndef PG_SDL3
+#include "SDL_syswm.h"
+#endif
 
 #include "pgcompat.h"
 
@@ -69,11 +66,11 @@ static PyObject *
 _scrap_has_text(PyObject *self, PyObject *args);
 
 /* Determine what type of clipboard we are using */
-#if !defined(__WIN32__)
+#if !defined(WIN32)
 #define SDL2_SCRAP
 #include "scrap_sdl2.c"
 
-#elif defined(__WIN32__)
+#elif defined(WIN32)
 #define WIN_SCRAP
 #include "scrap_win.c"
 
@@ -118,8 +115,9 @@ _scrap_init(PyObject *self, PyObject *args)
      * if (!SDL_GetVideoSurface())
      *     return RAISE(pgExc_SDLError, "No display mode is set");
      */
-    if (!pygame_scrap_init())
+    if (!pygame_scrap_init()) {
         return RAISE(pgExc_SDLError, SDL_GetError());
+    }
 
     Py_RETURN_NONE;
 }
@@ -172,8 +170,9 @@ _scrap_get_types(PyObject *self, PyObject *_null)
 
     list = PyList_New(0);
     types = pygame_scrap_get_types();
-    if (!types)
+    if (!types) {
         return list;
+    }
     while (types[i] != NULL) {
         type = types[i];
         tmp = PyUnicode_DecodeASCII(type, strlen(type), 0);
@@ -206,10 +205,12 @@ _scrap_contains(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (!PyArg_ParseTuple(args, "s", &type))
+    if (!PyArg_ParseTuple(args, "s", &type)) {
         return NULL;
-    if (pygame_scrap_contains(type))
+    }
+    if (pygame_scrap_contains(type)) {
         Py_RETURN_TRUE;
+    }
     Py_RETURN_FALSE;
 }
 
@@ -233,8 +234,9 @@ _scrap_get_scrap(PyObject *self, PyObject *args)
 
     PYGAME_SCRAP_INIT_CHECK();
 
-    if (!PyArg_ParseTuple(args, "s", &scrap_type))
+    if (!PyArg_ParseTuple(args, "s", &scrap_type)) {
         return NULL;
+    }
 
     if (!pygame_scrap_lost()) {
         /* Still own the clipboard. */
@@ -273,15 +275,15 @@ _scrap_get_scrap(PyObject *self, PyObject *args)
             Py_RETURN_NONE;
         }
 
-        Py_INCREF(val);
-        return val;
+        return Py_NewRef(val);
     }
 
     /* pygame_get_scrap() only returns NULL or !NULL, but won't set any
      * errors. */
     scrap = pygame_scrap_get(scrap_type, &count);
-    if (!scrap)
+    if (!scrap) {
         Py_RETURN_NONE;
+    }
 
     retval = PyBytes_FromStringAndSize(scrap, count);
 #if defined(PYGAME_SCRAP_FREE_STRING)
@@ -317,9 +319,10 @@ _scrap_put_scrap(PyObject *self, PyObject *args)
     }
 
     /* Set it in the clipboard. */
-    if (!pygame_scrap_put(scrap_type, scraplen, scrap))
+    if (!pygame_scrap_put(scrap_type, scraplen, scrap)) {
         return RAISE(pgExc_SDLError,
                      "content could not be placed in clipboard.");
+    }
 
     /* Add or replace the set value. */
     switch (_currentmode) {
@@ -349,8 +352,14 @@ _scrap_lost_scrap(PyObject *self, PyObject *_null)
 {
     PYGAME_SCRAP_INIT_CHECK();
 
-    if (pygame_scrap_lost())
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "pygame.scrap.lost deprecated since 2.2.0", 1) == -1) {
+        return NULL;
+    }
+
+    if (pygame_scrap_lost()) {
         Py_RETURN_TRUE;
+    }
     Py_RETURN_FALSE;
 }
 
@@ -369,11 +378,13 @@ _scrap_set_mode(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (!PyArg_ParseTuple(args, "i", &_currentmode))
+    if (!PyArg_ParseTuple(args, "i", &_currentmode)) {
         return NULL;
+    }
 
-    if (_currentmode != SCRAP_CLIPBOARD && _currentmode != SCRAP_SELECTION)
+    if (_currentmode != SCRAP_CLIPBOARD && _currentmode != SCRAP_SELECTION) {
         return RAISE(PyExc_ValueError, "invalid clipboard mode");
+    }
 
     /* Force the clipboard, if not in a X11 environment. */
     _currentmode = SCRAP_CLIPBOARD;
@@ -423,7 +434,11 @@ _scrap_put_text(PyObject *self, PyObject *args)
         return NULL;
     }
 
+#if SDL_VERSION_ATLEAST(3, 0, 0)
+    if (!SDL_SetClipboardText(text)) {
+#else
     if (SDL_SetClipboardText(text)) {
+#endif
         return RAISE(pgExc_SDLError, SDL_GetError());
     }
 

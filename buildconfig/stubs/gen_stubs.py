@@ -4,6 +4,7 @@ A script to auto-generate locals.pyi, constants.pyi and __init__.pyi typestubs
 """
 
 import pathlib
+import shutil
 from typing import Any
 
 import pygame.constants
@@ -35,7 +36,6 @@ PG_AUTOIMPORT_SUBMODS = [
     "surfarray",
     "transform",
     "scrap",
-    "threads",
     "version",
     "base",
     "bufferproxy",
@@ -52,6 +52,7 @@ PG_AUTOIMPORT_SUBMODS = [
     "system",
     "geometry",
     "window",
+    "typing",
 ]
 
 # pygame classes that are autoimported into main namespace are kept in this dict
@@ -64,17 +65,22 @@ PG_AUTOIMPORT_CLASSES = {
     "cursors": ["Cursor"],
     "bufferproxy": ["BufferProxy"],
     "mask": ["Mask"],
-    "_debug": ["print_debug_info"],
     "event": ["Event"],
     "font": ["Font"],
-    "mixer": ["Channel"],
+    "mixer": ["Sound", "Channel"],
     "time": ["Clock"],
     "joystick": ["Joystick"],
     "window": ["Window"],
     "base": ["__version__"],  # need an explicit import
     # uncomment below line if Circle is added to the base namespace later
-    # "geometry": ["Circle"], 
+    # "geometry": ["Circle"],
 }
+
+# These are things in the pygame.* namespace, but we don't want to stub the entire source
+ADDITIONAL_STUBS = [
+    "def print_debug_info() -> None: ...",
+    "def get_debug_info() -> str: ..."
+]
 
 # pygame modules from which __init__.py does the equivalent of
 # from submod import *
@@ -91,6 +97,11 @@ def get_all(mod: Any):
         return sorted({str(i) for i in mod.__all__})
 
     return [i for i in dir(mod) if not i.startswith("_")]
+
+
+def fmt_list(seq: list[str]):
+    inner = "\n".join(f'    "{i}",' for i in seq)
+    return f"[\n{inner}\n]\n"
 
 
 # store all imports of __init__.pyi
@@ -120,6 +131,8 @@ with open(constants_file, "w") as f:
         constant_type = getattr(pygame.constants, element).__class__.__name__
         f.write(f"{element}: {constant_type}\n")
 
+    f.write("__all__ = " + fmt_list(pygame.constants.__all__))
+
 
 # write __init__.pyi file
 init_file = pathlib.Path(__file__).parent / "pygame" / "__init__.pyi"
@@ -127,12 +140,15 @@ with open(init_file, "w") as f:
     # write the module docstring of this file in the generated file, so that
     # people know this file exists
     f.write(info_header)
+    f.write("# ruff: noqa: I001\n")
     f.write(misc_stubs)
 
     for mod, items in pygame_all_imports.items():
+        if mod == "pygame":
+            mod = "."
         if len(items) <= 4:
             # try to write imports in a single line if it can fit the line limit
-            import_items = map(lambda string: f"{string} as {string}", items)
+            import_items = (f"{string} as {string}" for string in items)
             import_line = f"\nfrom {mod} import {', '.join(import_items)}"
             if len(import_line) <= 88:
                 f.write(import_line)
@@ -143,6 +159,10 @@ with open(init_file, "w") as f:
             f.write(f"    {item} as {item},\n")
         f.write(")\n")
 
+    f.write("\n")
+    for stub in ADDITIONAL_STUBS:
+        f.write(f"{stub}\n")
+
 # write locals.pyi file
 locals_file = pathlib.Path(__file__).parent / "pygame" / "locals.pyi"
 with open(locals_file, "w") as f:
@@ -152,3 +172,10 @@ with open(locals_file, "w") as f:
     for element in get_all(pygame.locals):
         constant_type = getattr(pygame.locals, element).__class__.__name__
         f.write(f"{element}: {constant_type}\n")
+
+    f.write("__all__ = " + fmt_list(pygame.locals.__all__))
+
+# copy typing.py to typing.pyi for type checkers
+typing_py_file = pathlib.Path(__file__).parent.parent.parent / "src_py" / "typing.py"
+typing_stub_file = pathlib.Path(__file__).parent / "pygame" / "typing.pyi"
+shutil.copyfile(typing_py_file, typing_stub_file)

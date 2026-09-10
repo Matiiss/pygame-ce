@@ -1,12 +1,13 @@
-"""Debug functionality that allows for more useful issue reporting
-"""
+"""Debug functionality that allows for more useful issue reporting"""
 
+import importlib
+import platform
 import sys
 import traceback
-import importlib
-from typing import Tuple, Optional, Callable
+from os import environ
 
-ImportResult = Tuple[str, bool, Optional[Callable]]
+from pygame.system import get_cpu_instruction_sets
+from pygame.version import ver
 
 
 def str_from_tuple(version_tuple):
@@ -31,7 +32,7 @@ def attempt_import(module, function_name, output_str=""):
     Args:
         module: string representing module name
         function_name: string representing function name to be imported
-        output_str: optional string to prepend error messagess to if one occurs
+        output_str: optional string to prepend error messages to if one occurs
 
     Returns:
         tuple(str, bool, Any):
@@ -53,14 +54,79 @@ def attempt_import(module, function_name, output_str=""):
     return (output_str, success, i)
 
 
-def print_debug_info(filename=None):
-    """Gets debug information for reporting bugs. Prints to console
-    if filename is not specified, otherwise writes to that file
-    (note: if filename is not an empty file, it will overwrite whatever is
-    in there)
+def _get_platform_info():
+    """
+    Internal helper to get platform information
+    """
+    cpu_inst_dict = get_cpu_instruction_sets()
+    sse2 = "Yes" if cpu_inst_dict["SSE2"] else "No"
+    avx2 = "Yes" if cpu_inst_dict["AVX2"] else "No"
+    neon = "Yes" if cpu_inst_dict["NEON"] else "No"
+    ret = f"Platform:\t\t{platform.platform()}\n"
+    ret += f"System:\t\t\t{platform.system()}\n"
+    ret += f"System Version:\t\t{platform.version()}\n"
+    ret += f"Processor:\t\t{platform.processor()}\tSSE2: {sse2}\tAVX2: {avx2}\tNEON: {neon}\n"
+    ret += (
+        f"Architecture:\t\tBits: {platform.architecture()[0]}\t"
+        f"Linkage: {platform.architecture()[1]}\n\n"
+    )
 
-    Args:
-        filename: string name of the file to save
+    ret += f"Python:\t\t\t{platform.python_implementation()} {sys.version}\n"
+    ret += (
+        f"GIL Enabled:\t\t{sys._is_gil_enabled()}\n"
+        if hasattr(sys, "_is_gil_enabled")
+        else "GIL Enabled:\t\tTrue\n"
+    )
+    ret += f"pygame version:\t\t{ver}\n"
+    return ret
+
+
+def append_dep_version(dep_name, get_version, tab_count, input_str) -> str:
+    """
+    Internal helper to append SDL + Freetype versions to the debug string
+    """
+    debug_str = input_str
+    tabs = "\t" * tab_count
+    debug_str += (
+        f"{dep_name} versions:{tabs}Linked: {str_from_tuple(get_version())}\t"
+        f"Compiled: {str_from_tuple(get_version(linked=False))}\n"
+    )
+
+    return debug_str
+
+
+def append_driver_info(
+    display_init, mixer_init, get_display_driver, get_mixer_driver, input_str
+):
+    """
+    Internal helper to append the Display and Mixer driver info to the debug string
+    """
+    debug_str = input_str
+    if display_init():
+        driver = get_display_driver()
+        if driver.upper() != "X11":
+            debug_str += f"Display Driver:\t\t{driver}\n"
+        else:
+            is_xwayland = (environ.get("XDG_SESSION_TYPE") == "wayland") or (
+                "WAYLAND_DISPLAY" in environ
+            )
+            debug_str += f"Display Driver:\t\t{driver} ( xwayland == {is_xwayland} )\n"
+    else:
+        debug_str += "Display Driver:\t\tDisplay Not Initialized\n"
+
+    if mixer_init():
+        debug_str += f"Mixer Driver:\t\t{get_mixer_driver()}"
+    else:
+        debug_str += "Mixer Driver:\t\tMixer Not Initialized"
+
+    return debug_str
+
+
+def get_debug_info() -> str:
+    """Gets debug information for reporting bugs.
+
+    Returns:
+        str: String containing all of the info for bug reports.
     """
     debug_str = ""
 
@@ -69,16 +135,22 @@ def print_debug_info(filename=None):
         # pylint: disable=unused-argument
         return (-1, -1, -1)
 
-    from pygame.display import get_driver, get_init as display_init
     from pygame.base import get_sdl_version
+    from pygame.display import (
+        get_driver as get_display_driver,
+        get_init as display_init,
+    )
+
+    debug_str, *mixer = attempt_import("pygame.mixer", "get_driver", debug_str)
+    get_mixer_driver = mixer[1] if mixer[0] else lambda: None
+
+    debug_str, *mixer = attempt_import("pygame.mixer", "get_init", debug_str)
+    mixer_init = mixer[1] if mixer[0] else lambda: False
 
     debug_str, *mixer = attempt_import(
         "pygame.mixer", "get_sdl_mixer_version", debug_str
     )
-    if not mixer[0]:
-        get_sdl_mixer_version = default_return
-    else:
-        get_sdl_mixer_version = mixer[1]
+    get_sdl_mixer_version = mixer[1] if mixer[0] else default_return
 
     debug_str, *font = attempt_import("pygame.font", "get_sdl_ttf_version", debug_str)
     if not font[0]:
@@ -100,62 +172,23 @@ def print_debug_info(filename=None):
     else:
         ft_version = freetype[1]
 
-    from pygame.version import ver
+    debug_str += _get_platform_info()
 
-    import platform
+    debug_str = append_dep_version("SDL", get_sdl_version, 2, debug_str)
+    debug_str = append_dep_version("SDL Mixer", get_sdl_mixer_version, 1, debug_str)
+    debug_str = append_dep_version("SDL Font", get_sdl_ttf_version, 1, debug_str)
+    debug_str = append_dep_version("SDL Image", get_sdl_image_version, 1, debug_str)
+    debug_str = append_dep_version("Freetype", ft_version, 1, debug_str)
 
-    debug_str += f"Platform:\t\t{platform.platform()}\n"
-
-    debug_str += f"System:\t\t\t{platform.system()}\n"
-
-    debug_str += f"System Version:\t\t{platform.version()}\n"
-
-    debug_str += f"Processor:\t\t{platform.processor()}\n"
-
-    debug_str += (
-        f"Architecture:\t\tBits: {platform.architecture()[0]}\t"
-        f"Linkage: {platform.architecture()[1]}\n"
+    debug_str = append_driver_info(
+        display_init, mixer_init, get_display_driver, get_mixer_driver, debug_str
     )
 
-    if display_init():
-        debug_str += f"Driver:\t\t\t{get_driver()}\n\n"
-    else:
-        debug_str += "Driver:\t\t\tDisplay Not Initialized\n\n"
+    return debug_str
 
-    debug_str += f"Python:\t\t\t{platform.python_implementation()}\n"
 
-    debug_str += f"pygame version:\t\t{ver}\n"
+def print_debug_info() -> None:
+    """Prints debug information for reporting bugs."""
+    debug_str = get_debug_info()
 
-    debug_str += f"python version:\t\t{str_from_tuple(sys.version_info[0:3])}\n\n"
-
-    debug_str += (
-        f"SDL versions:\t\tLinked: {str_from_tuple(get_sdl_version())}\t"
-        f"Compiled: {str_from_tuple(get_sdl_version(linked = False))}\n"
-    )
-
-    debug_str += (
-        f"SDL Mixer versions:\tLinked: {str_from_tuple(get_sdl_mixer_version())}\t"
-        f"Compiled: {str_from_tuple(get_sdl_mixer_version(linked = False))}\n"
-    )
-
-    debug_str += (
-        f"SDL Font versions:\tLinked: {str_from_tuple(get_sdl_ttf_version())}\t"
-        f"Compiled: {str_from_tuple(get_sdl_ttf_version(linked = False))}\n"
-    )
-
-    debug_str += (
-        f"SDL Image versions:\tLinked: {str_from_tuple(get_sdl_image_version())}\t"
-        f"Compiled: {str_from_tuple(get_sdl_image_version(linked = False))}\n"
-    )
-
-    debug_str += (
-        f"Freetype versions:\tLinked: {str_from_tuple(ft_version())}\t"
-        f"Compiled: {str_from_tuple(ft_version(linked = False))}"
-    )
-
-    if filename is None:
-        print(debug_str)
-
-    else:
-        with open(filename, "w", encoding="utf8") as debugfile:
-            debugfile.write(debug_str)
+    print(debug_str)

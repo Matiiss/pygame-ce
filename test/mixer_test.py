@@ -1,14 +1,15 @@
-import sys
+import copy
 import os
-import unittest
-import time
 import pathlib
 import platform
-
-from pygame.tests.test_utils import example_path, prompt, question
+import sys
+import time
+import unittest
+from tempfile import TemporaryDirectory
 
 import pygame
 from pygame import mixer
+from pygame.tests.test_utils import example_path, prompt, question
 
 IS_PYPY = "PyPy" == platform.python_implementation()
 
@@ -47,6 +48,48 @@ class MixerModuleTest(unittest.TestCase):
     def tearDown(self):
         mixer.quit()
         mixer.pre_init(0, 0, 0, 0)
+
+    def test_get_driver(self):
+        mixer.init()
+        drivers = [
+            pygame.NULL_VIDEODRIVER,
+            "pipewire",
+            "pulseaudio",
+            "alsa",
+            "jack",
+            "sndio",
+            "netbsd",
+            "dsp",
+            "qsa",
+            "audio",
+            "arts",
+            "esd",
+            "nacl",
+            "nas",
+            "wasapi",
+            "directsound",
+            "winmm",
+            "paud",
+            "haiku",
+            "coreaudio",
+            "disk",
+            "fusionsound",
+            "AAudio",
+            "openslES",
+            "android",
+            "ps2",
+            "psp",
+            "vita",
+            "n3ds",
+            "emscripten",
+            "DART",
+        ]
+        driver = mixer.get_driver()
+        self.assertIn(driver, drivers)
+
+        mixer.quit()
+        with self.assertRaises(pygame.error):
+            mixer.get_driver()
 
     def test_init__keyword_args(self):
         # note: this test used to loop over all CONFIGS, but it's very slow..
@@ -121,8 +164,7 @@ class MixerModuleTest(unittest.TestCase):
         mixer.init()
 
         # test that initially, get_soundfont returns only real files
-        initial_sf = mixer.get_soundfont()
-        if initial_sf is not None:
+        if (initial_sf := mixer.get_soundfont()) is not None:
             for i in initial_sf.split(";"):
                 os.path.exists(i)
 
@@ -237,20 +279,12 @@ class MixerModuleTest(unittest.TestCase):
         import shutil
 
         ep = example_path("data")
-        temp_file = os.path.join(ep, "你好.wav")
-        org_file = os.path.join(ep, "house_lo.wav")
-        shutil.copy(org_file, temp_file)
-        try:
-            with open(temp_file, "rb") as f:
-                pass
-        except OSError:
-            raise unittest.SkipTest("the path cannot be opened")
-
-        try:
+        with TemporaryDirectory() as tmpdir:
+            temp_file = os.path.join(tmpdir, "你好.wav")
+            org_file = os.path.join(ep, "house_lo.wav")
+            shutil.copy(org_file, temp_file)
             sound = mixer.Sound(temp_file)
             del sound
-        finally:
-            os.remove(temp_file)
 
     @unittest.skipIf(
         os.environ.get("SDL_AUDIODRIVER") == "disk",
@@ -259,15 +293,15 @@ class MixerModuleTest(unittest.TestCase):
     def test_array_keyword(self):
         try:
             from numpy import (
-                array,
                 arange,
-                zeros,
+                array,
                 int8,
-                uint8,
                 int16,
-                uint16,
                 int32,
+                uint8,
+                uint16,
                 uint32,
+                zeros,
             )
         except ImportError:
             self.skipTest("requires numpy")
@@ -328,7 +362,7 @@ class MixerModuleTest(unittest.TestCase):
                     mixer.quit()
 
     def _test_array_argument(self, format, a, test_pass):
-        from numpy import array, all as all_
+        from numpy import all as all_, array
 
         try:
             snd = mixer.Sound(array=a)
@@ -510,9 +544,7 @@ class MixerModuleTest(unittest.TestCase):
         filename = example_path(os.path.join("data", "house_lo.wav"))
         sound = mixer.Sound(file=filename)
 
-        num_channels = mixer.get_num_channels()
-
-        if num_channels > 0:
+        if (num_channels := mixer.get_num_channels()) > 0:
             found_channel = mixer.find_channel()
             self.assertIsNotNone(found_channel)
 
@@ -1066,7 +1098,7 @@ class SoundTypeTest(unittest.TestCase):
     def test_samples_address(self):
         """Test the _samples_address getter."""
         try:
-            from ctypes import pythonapi, c_void_p, py_object
+            from ctypes import c_void_p, py_object, pythonapi
 
             Bytes_FromString = pythonapi.PyBytes_FromString
 
@@ -1291,6 +1323,114 @@ class SoundTypeTest(unittest.TestCase):
         incorrect = IncorrectSuclass()
 
         self.assertRaises(RuntimeError, incorrect.get_volume)
+
+    def test_snd_copy(self):
+        class SubSound(mixer.Sound):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        mixer.init()
+
+        filenames = [
+            "house_lo.ogg",
+            "house_lo.wav",
+            "house_lo.flac",
+            "house_lo.opus",
+            "surfonasinewave.xm",
+        ]
+        old_volumes = [0.1, 0.2, 0.5, 0.7, 1.0]
+        new_volumes = [0.2, 0.3, 0.7, 1.0, 0.1]
+        if pygame.mixer.get_sdl_mixer_version() >= (2, 6, 0):
+            filenames.append("house_lo.mp3")
+            old_volumes.append(0.9)
+            new_volumes.append(0.5)
+
+        for f, old_vol, new_vol in zip(filenames, old_volumes, new_volumes):
+            filename = example_path(os.path.join("data", f))
+            try:
+                sound = mixer.Sound(file=filename)
+                sound.set_volume(old_vol)
+            except pygame.error:
+                continue
+            sound_copy = sound.copy()
+            self.assertEqual(sound.get_length(), sound_copy.get_length())
+            self.assertEqual(sound.get_num_channels(), sound_copy.get_num_channels())
+            self.assertEqual(sound.get_volume(), sound_copy.get_volume())
+            self.assertEqual(sound.get_raw(), sound_copy.get_raw())
+
+            sound.set_volume(new_vol)
+            self.assertNotEqual(sound.get_volume(), sound_copy.get_volume())
+
+            del sound
+
+            # Test on the copy for playable sounds
+            channel = sound_copy.play()
+            if channel is None:
+                continue
+            self.assertTrue(channel.get_busy())
+            sound_copy.stop()
+            self.assertFalse(channel.get_busy())
+            sound_copy.play()
+            self.assertEqual(sound_copy.get_num_channels(), 1)
+
+        # Test __copy__
+        for f, old_vol, new_vol in zip(filenames, old_volumes, new_volumes):
+            filename = example_path(os.path.join("data", f))
+            try:
+                sound = mixer.Sound(file=filename)
+                sound.set_volume(old_vol)
+            except pygame.error:
+                continue
+            sound_copy = copy.copy(sound)
+            self.assertEqual(sound.get_length(), sound_copy.get_length())
+            self.assertEqual(sound.get_num_channels(), sound_copy.get_num_channels())
+            self.assertEqual(sound.get_volume(), sound_copy.get_volume())
+            self.assertEqual(sound.get_raw(), sound_copy.get_raw())
+
+            sound.set_volume(new_vol)
+            self.assertNotEqual(sound.get_volume(), sound_copy.get_volume())
+
+            del sound
+
+            # Test on the copy for playable sounds
+            channel = sound_copy.play()
+            if channel is None:
+                continue
+            self.assertTrue(channel.get_busy())
+            sound_copy.stop()
+            self.assertFalse(channel.get_busy())
+            sound_copy.play()
+            self.assertEqual(sound_copy.get_num_channels(), 1)
+
+        # Test copying a subclass of Sound
+        for f, old_vol, new_vol in zip(filenames, old_volumes, new_volumes):
+            filename = example_path(os.path.join("data", f))
+            try:
+                sound = SubSound(file=filename)
+                sound.set_volume(old_vol)
+            except pygame.error:
+                continue
+            sound_copy = sound.copy()
+            self.assertIsInstance(sound_copy, SubSound)
+            self.assertEqual(sound.get_length(), sound_copy.get_length())
+            self.assertEqual(sound.get_num_channels(), sound_copy.get_num_channels())
+            self.assertEqual(sound.get_volume(), sound_copy.get_volume())
+            self.assertEqual(sound.get_raw(), sound_copy.get_raw())
+
+            sound.set_volume(new_vol)
+            self.assertNotEqual(sound.get_volume(), sound_copy.get_volume())
+
+            del sound
+
+            # Test on the copy for playable sounds
+            channel = sound_copy.play()
+            if channel is None:
+                continue
+            self.assertTrue(channel.get_busy())
+            sound_copy.stop()
+            self.assertFalse(channel.get_busy())
+            sound_copy.play()
+            self.assertEqual(sound_copy.get_num_channels(), 1)
 
 
 ##################################### MAIN #####################################

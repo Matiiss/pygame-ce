@@ -1,33 +1,14 @@
 name: macOS
 
-# Run CI only when a release is created, on changes to main branch, or any PR 
-# to main. Do not run CI on any other branch. Also, skip any non-source changes 
-# from running on CI
+# Run CI only when a release is created, on changes to main branch, or any PR
+# to main.
 on:
   push:
-    branches: main
-    paths-ignore:
-      - 'docs/**'
-      - 'examples/**'
-      - '.gitignore'
-      - '*.rst'
-      - '*.md'
-      - '.github/workflows/*.yml'
-      # re-include current file to not be excluded
-      - '!.github/workflows/build-macos.yml'
+    branches: [main, main-2.x]
 
   pull_request:
-    branches: main
-    paths-ignore:
-      - 'docs/**'
-      - 'examples/**'
-      - '.gitignore'
-      - '*.rst'
-      - '*.md'
-      - '.github/workflows/*.yml'
-      # re-include current file to not be excluded
-      - '!.github/workflows/build-macos.yml'
-  
+    branches: [main, main-2.x]
+
   # the github release drafter can call this workflow
   workflow_call:
 
@@ -35,26 +16,33 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-macos
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   deps:
     name: ${{ matrix.macarch }} deps
-    runs-on: macos-12
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         # make arm64 deps and x86_64 deps
-        macarch: [arm64, x86_64]
+        include:
+          - { macarch: arm64, os: macos-15 }
+          - { macarch: x86_64, os: macos-15 }
 
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Test for Mac Deps cache hit
         id: macdep-cache
-        uses: actions/cache@v4.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ github.workspace }}/pygame_mac_deps_${{ matrix.macarch }}
-          # The hash of all files in buildconfig manylinux-build and macdependencies is 
+          # The hash of all files in buildconfig manylinux-build and macdependencies is
           # the key to the cache. If anything changes here, the deps are built again
-          key: macdep-${{ hashFiles('buildconfig/manylinux-build/**') }}-${{ hashFiles('buildconfig/macdependencies/*.sh') }}-${{ matrix.macarch }}
+          key: macdep-${{ hashFiles('buildconfig/manylinux-build/**') }}-${{ hashFiles('buildconfig/macdependencies/*.sh') }}-${{ matrix.macarch }}-${{ matrix.os }}
           lookup-only: true
 
       # build mac deps on cache miss
@@ -62,126 +50,130 @@ jobs:
         if: steps.macdep-cache.outputs.cache-hit != 'true'
         run: |
           export MAC_ARCH="${{ matrix.macarch }}"
-          brew install coreutils pkg-config
+          brew install coreutils
           cd buildconfig/macdependencies
           bash ./build_mac_deps.sh
 
       # Uncomment when you want to manually verify the deps by downloading them
       # - name: Upload Mac deps
-      #   uses: actions/upload-artifact@v4
+      #   uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       #   with:
       #     name: pygame-mac-deps-${{ matrix.macarch }}
       #     path: ${{ github.workspace }}/pygame_mac_deps_${{ matrix.macarch }}
 
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.macarch }}
     needs: deps
-    runs-on: macos-12
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false  # if a particular matrix build fails, don't skip the rest
       matrix:
-        # Split job into 5 matrix builds, because GH actions provides 5 concurrent
-        # builds on macOS. This needs to be manually kept updated so that each
-        # of these builds take roughly the same time
         include:
-          - { 
-            name: "x86_64 (CPython 3.9 - 3.12)",
-            macarch: x86_64,
-            pyversions: "cp3{9,10,11,12}-*",
-          }
-
-          - { 
-            name: "x86_64 (Python 3.8)",
-            macarch: x86_64,
-            # CPython/PyPy 3.8
-            pyversions: "?p38-*",
-          }
-
-          - { 
-            name: "x86_64 (PyPy 3.9 and 3.10)",
-            macarch: x86_64,
-            pyversions: "pp39-* pp310-*",
-          }
-
-          - { 
-            name: "arm64 (CPython 3.8 - 3.10)",
-            macarch: arm64,
-            pyversions: "cp3{8,9,10}-*",
-          }
-
-          - { 
-            name: "arm64 (CPython 3.11 - 3.12)",
-            macarch: arm64,
-            pyversions: "cp3{11,12}-*",
-          }
+          - { macarch: arm64, os: macos-15 }
+          - { macarch: x86_64, os: macos-15 }
 
     env:
       MAC_ARCH: ${{ matrix.macarch }}
-      # load pip config from this file. Define this in 'CIBW_ENVIRONMENT'
-      # because this should not affect cibuildwheel machinery
-      # also define environment variables needed for testing
-      CIBW_ENVIRONMENT: PIP_CONFIG_FILE=buildconfig/pip_config.ini SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=disk
 
-      # Explicitly tell CIBW what the wheel arch deployment target should be
-      # There seems to be no better way to set this than this env
-      # We need this because our minimum is 10.11, different from default
-      # of 10.9 on x86s
-      # Related issue: https://github.com/pypa/cibuildwheel/issues/952
-      _PYTHON_HOST_PLATFORM: ${{ matrix.macarch == 'x86_64' && 'macosx-10.11-x86_64' || 'macosx-11.0-arm64'}}
-
-      # Similarly, we need to tell CIBW that the wheel's linking steps
-      # should be for 10.11 on x86
+      # We need to tell CIBW that the wheel's linking steps should be for 10.11 on x86
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.macarch == 'x86_64' && '10.11' || '11.0' }}
 
-      CIBW_BUILD: ${{ matrix.pyversions }}
-
-      # Build arm64 and x86_64 wheels too on an Intel runner.
-      # Note that the arm64 wheels cannot be tested on CI in this configuration
       CIBW_ARCHS: ${{ matrix.macarch }}
 
       # Setup macOS dependencies
       CIBW_BEFORE_ALL: |
-        brew install pkg-config
         cd buildconfig/macdependencies
         cp -r ${{ github.workspace }}/pygame_mac_deps_${{ matrix.macarch }} ${{ github.workspace }}/pygame_mac_deps
         bash ./install_mac_deps.sh
 
       CIBW_BEFORE_BUILD: |
-        pip install requests numpy Sphinx"<7.2.0"
-        python setup.py docs
         cp -r ${{ github.workspace }}/pygame_mac_deps_${{ matrix.macarch }} ${{ github.workspace }}/pygame_mac_deps
 
       # To remove any speculations about the wheel not being self-contained
       CIBW_BEFORE_TEST: rm -rf ${{ github.workspace }}/pygame_mac_deps
 
-      CIBW_TEST_COMMAND: python -m pygame.tests -v --exclude opengl,timing --time_out 300
-
-      # Increase pip debugging output
-      CIBW_BUILD_VERBOSITY: 2
-
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: pip cache
-        uses: actions/cache@v4.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/Library/Caches/pip  # This cache path is only right on mac
-          key: pip-cache-${{ matrix.name }}
+          key: pip-cache-${{ matrix.macarch }}-${{ matrix.os }}
 
       - name: Fetch Mac deps
         id: macdep-cache
-        uses: actions/cache@v4.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ github.workspace }}/pygame_mac_deps_${{ matrix.macarch }}
           key: macdep-${{ hashFiles('buildconfig/manylinux-build/**') }}-${{ hashFiles('buildconfig/macdependencies/*.sh') }}-${{ matrix.macarch }}
           fail-on-cache-miss: true
 
       - name: Build and test wheels
-        uses: pypa/cibuildwheel@v2.16.4
-
-      - uses: actions/upload-artifact@v4
+        uses: pypa/cibuildwheel@1828c10ab37f080699c7b81cea34097c684a7074 # v4.2.0
         with:
-          name: pygame-wheels-macos-${{ matrix.name }}
+          extras: uv
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-partial-${{ matrix.macarch }}
           path: ./wheelhouse/*.whl
           compression-level: 0  # wheels are already zip files, no need for more compression
 
+  universal2:
+    needs: build
+    runs-on: macos-15
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          merge-multiple: true
+
+      # Here we iterate over all our arm wheels, and get the corresponding intel wheel
+      # (matching version) and use delocate-merge to generate the final universal2
+      # wheel.
+      - name: Generate universal2 wheels
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          pipx install delocate==0.13.0
+
+          OUT_DIR="wheelhouse"
+          mkdir -p "$OUT_DIR"
+          for arm in *arm64.whl; do
+            x86="$(ls "$(echo "$arm" | cut -d- -f1-4)"-macosx_*_x86_64.whl 2>/dev/null | head -n1 || true)"
+            if [[ ! -f "$x86" ]]; then
+              echo "Copying arm wheel as is (missing x86 component): $arm"
+              mv "$arm" "$OUT_DIR"
+              continue
+            fi
+            echo "Merging:"
+            echo "  ARM: $arm"
+            echo "  X86: $x86"
+            delocate-merge "$arm" "$x86" -w "$OUT_DIR"
+            rm "$x86"
+          done
+          for x86 in *x86_64.whl; do
+            echo "Copying x86_64 wheel as is (missing arm component): $x86"
+            mv "$x86" "$OUT_DIR"
+          done
+
+      - name: Sanity check - install and test a single universal2 wheel
+        env:
+          # Pip now forces us to either make a venv or set this flag, so we will do
+          # this
+          PIP_BREAK_SYSTEM_PACKAGES: 1
+          SDL_VIDEODRIVER: "dummy"
+          SDL_AUDIODRIVER: "disk"
+        run: |
+          python3 -m pip install --no-index --find-links wheelhouse pygame-ce
+          python3 -m pygame.tests -v --exclude opengl,music,timing --time_out 300
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pygame-wheels-macos
+          path: ./wheelhouse/*.whl
+          compression-level: 0  # wheels are already zip files, no need for more compression

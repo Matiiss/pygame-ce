@@ -18,21 +18,16 @@
 # Pete Shinners
 # pete@shinners.org
 """sysfont, used in the font module to find system fonts"""
-import warnings
+
+import difflib
+import itertools
 import os
 import sys
-import itertools
-import difflib
+import warnings
 from os.path import basename, dirname, exists, join, splitext
 
-from pygame.font import Font
 from pygame import __file__ as pygame_main_file
-
-if sys.platform != "emscripten":
-    if os.name == "nt":
-        import winreg as _winreg
-    import subprocess
-
+from pygame.font import Font
 
 OpenType_extensions = frozenset((".ttf", ".ttc", ".otf"))
 Sysfonts = {}
@@ -56,6 +51,7 @@ def _addfont(name, bold, italic, font, fontdict):
 
 def initsysfonts_win32():
     """initialize fonts dictionary on Windows"""
+    import winreg as _winreg
 
     fontdir = join(os.environ.get("WINDIR", "C:\\Windows"), "Fonts")
     fonts = {}
@@ -80,6 +76,12 @@ def initsysfonts_win32():
                     name, font, _ = _winreg.EnumValue(key, i)
                 except OSError:
                     break
+
+                # https://github.com/pygame-community/pygame-ce/issues/3742
+                # Registry values could be other types besides strings.
+                # Lets skip those.
+                if not isinstance(font, str):
+                    continue
 
                 if splitext(font)[1].lower() not in OpenType_extensions:
                     continue
@@ -162,15 +164,14 @@ def _font_finder_darwin():
         "/System/Library/Fonts/Supplemental",
     ]
 
-    username = os.getenv("USER")
-    if username:
+    if username := os.getenv("USER"):
         locations.append(f"/Users/{username}/Library/Fonts")
 
     strange_root = "/System/Library/Assets/com_apple_MobileAsset_Font3"
     if exists(strange_root):
-        strange_locations = os.listdir(strange_root)
-        for loc in strange_locations:
-            locations.append(f"{strange_root}/{loc}/AssetData")
+        locations += [
+            f"{strange_root}/{loc}/AssetData" for loc in os.listdir(strange_root)
+        ]
 
     fonts = {}
 
@@ -189,7 +190,7 @@ def _font_finder_darwin():
 
 def initsysfonts_darwin():
     """Read the fonts on macOS, and OS X."""
-    # if the X11 binary exists... try and use that.
+    # if the X11 binary exists... try to use that.
     #  Not likely to be there on pre 10.4.x ... or macOS 10.10+
     if exists("/usr/X11/bin/fc-list"):
         fonts = initsysfonts_unix("/usr/X11/bin/fc-list")
@@ -211,6 +212,8 @@ def initsysfonts_unix(path="fc-list"):
 
     if sys.platform == "emscripten":
         return fonts
+
+    import subprocess
 
     try:
         proc = subprocess.run(
@@ -439,12 +442,13 @@ def SysFont(name, size, bold=False, italic=False, constructor=None):
     fall back on the builtin pygame font if the given font
     is not found.
 
-    Name can also be an iterable of font names, a string of
-    comma-separated font names, or a bytes of comma-separated
-    font names, in which case the set of names will be searched
-    in order. Pygame uses a small set of common font aliases. If the
-    specific font you ask for is not available, a reasonable
-    alternative may be used.
+    Name shall be supplied as the plain font name without
+    file extensions. Name can also be an iterable of font names,
+    a string of comma-separated font names, or a bytes of
+    comma-separated font names, in which case the set of names
+    will be searched in order. Pygame uses a small set of common
+    font aliases. If the specific font you ask for is not available,
+    a reasonable alternative may be used.
 
     If optional constructor is provided, it must be a function with
     signature constructor(fontpath, size, bold, italic) which returns
@@ -471,12 +475,16 @@ def SysFont(name, size, bold=False, italic=False, constructor=None):
                 break
 
         else:
+            font_verification_message = (
+                "Verify your font name input. Using the default font instead."
+            )
+
             if len(name) > 1:
                 names = "', '".join(name)
                 warnings.warn(
                     "None of the specified system fonts "
                     f"('{names}') could be found. "
-                    "Using the default font instead."
+                    f"{font_verification_message}"
                 )
             else:
                 # Identifies the closest matches to the font provided by
@@ -492,7 +500,7 @@ def SysFont(name, size, bold=False, italic=False, constructor=None):
                 warnings.warn(
                     f"The system font '{name[0]}' couldn't be "
                     f"found. {match_text}"
-                    "Using the default font instead."
+                    f"{font_verification_message}"
                 )
     else:
         fontname = None

@@ -64,24 +64,24 @@ Sprites are not thread safe. So lock them yourself if using threads.
    adding the Sprite to Groups. For example:
 
    .. code-block:: python
-   
+
        class Block(pygame.sprite.Sprite):
-            
-           # Constructor. Pass in the color of the block, 
+
+           # Constructor. Pass in the color of the block,
            # and its x and y position
            def __init__(self, color, width, height):
               # Call the parent class (Sprite) constructor
-              pygame.sprite.Sprite.__init__(self) 
-        
+              pygame.sprite.Sprite.__init__(self)
+
               # Create an image of the block, and fill it with a color.
               # This could also be an image loaded from the disk.
               self.image = pygame.Surface([width, height])
               self.image.fill(color)
-        
+
               # Fetch the rectangle object that has the dimensions of the image
               # Update the position of this object by setting the values of rect.x and rect.y
-              self.rect = self.image.get_rect()   
-      
+              self.rect = self.image.get_rect()
+
    .. method:: update
 
       | :sl:`method to control sprite behavior`
@@ -244,7 +244,7 @@ Sprites are not thread safe. So lock them yourself if using threads.
       Add any number of Sprites to this Group. This will only add Sprites that
       are not already members of the Group.
 
-      Each sprite argument can also be a iterator containing Sprites.
+      Each sprite argument can also be an iterator containing Sprites.
 
       .. ## Group.add ##
 
@@ -256,7 +256,7 @@ Sprites are not thread safe. So lock them yourself if using threads.
       Remove any number of Sprites from the Group. This will only remove
       Sprites that are already members of the Group.
 
-      Each sprite argument can also be a iterator containing Sprites.
+      Each sprite argument can also be an iterator containing Sprites.
 
       .. ## Group.remove ##
 
@@ -269,7 +269,7 @@ Sprites are not thread safe. So lock them yourself if using threads.
       similar to using the "in" operator on the Group ("if sprite in group:
       ..."), which tests if a single Sprite belongs to a Group.
 
-      Each sprite argument can also be a iterator containing Sprites.
+      Each sprite argument can also be an iterator containing Sprites.
 
       .. ## Group.has ##
 
@@ -291,13 +291,17 @@ Sprites are not thread safe. So lock them yourself if using threads.
    .. method:: draw
 
       | :sl:`blit the Sprite images`
-      | :sg:`draw(Surface) -> List[Rect]`
+      | :sg:`draw(Surface, bgd=None, special_flags=0) -> list[Rect]`
 
       Draws the contained Sprites to the Surface argument. This uses the
       ``Sprite.image`` attribute for the source surface, and ``Sprite.rect``
-      for the position.
+      for the position. ``special_flags`` is passed to ``Surface.blit()``.
+      ``bgd`` is unused in this method but ``LayeredDirty.draw()`` uses
+      it.
 
       The Group keeps sprites in the order they were added, they will be drawn in this order.
+
+      .. versionchanged:: 2.5.4 Added the ``bgd`` and ``special_flags`` arguments
 
       .. ## Group.draw ##
 
@@ -347,17 +351,21 @@ Sprites are not thread safe. So lock them yourself if using threads.
    .. method:: draw
 
       | :sl:`blit the Sprite images and track changed areas`
-      | :sg:`draw(surface) -> Rect_list`
+      | :sg:`draw(surface, bgd=None, special_flags=0) -> Rect_list`
 
       Draws all the Sprites to the surface, the same as ``Group.draw()``. This
       method also returns a list of Rectangular areas on the screen that have
       been changed. The returned changes include areas of the screen that have
-      been affected by previous ``Group.clear()`` calls.
+      been affected by previous ``Group.clear()`` calls. ``special_flags`` is
+      passed to ``Surface.blit()``. ``bgd`` is unused in this method but
+      ``LayeredDirty.draw()`` uses it.
 
       The returned Rect list should be passed to ``pygame.display.update()``.
       This will help performance on software driven display modes. This type of
       updating is usually only helpful on destinations with non-animating
       backgrounds.
+
+      .. versionchanged:: 2.5.4 Added the ``bgd`` and ``special_flags`` arguments
 
       .. ## RenderUpdates.draw ##
 
@@ -395,7 +403,7 @@ Sprites are not thread safe. So lock them yourself if using threads.
 
    .. method:: sprites
 
-      | :sl:`returns a ordered list of sprites (first back, last top).`
+      | :sl:`returns an ordered list of sprites (first back, last top).`
       | :sg:`sprites() -> sprites`
 
       .. ## LayeredUpdates.sprites ##
@@ -403,7 +411,9 @@ Sprites are not thread safe. So lock them yourself if using threads.
    .. method:: draw
 
       | :sl:`draw all sprites in the right order onto the passed surface.`
-      | :sg:`draw(surface) -> Rect_list`
+      | :sg:`draw(surface, bgd=None, special_flags=0) -> Rect_list`
+
+      .. versionchanged:: 2.5.4 Added the ``bgd`` and ``special_flags`` arguments
 
       .. ## LayeredUpdates.draw ##
 
@@ -551,10 +561,13 @@ Sprites are not thread safe. So lock them yourself if using threads.
    .. method:: draw
 
       | :sl:`draw all sprites in the right order onto the passed surface.`
-      | :sg:`draw(surface, bgd=None) -> Rect_list`
+      | :sg:`draw(surface, bgd=None, special_flags=None) -> Rect_list`
 
       You can pass the background too. If a background is already set, then the
-      bgd argument has no effect.
+      bgd argument has no effect. ``special_flags`` is passed to
+      ``Surface.blit()``.
+
+      .. versionchanged:: 2.5.4 Added the ``special_flags`` argument
 
       .. ## LayeredDirty.draw ##
 
@@ -667,17 +680,17 @@ Sprites are not thread safe. So lock them yourself if using threads.
        collide_circle_ratio, collide_mask
 
    Example:
-   
+
    .. code-block:: python
 
     # See if the Sprite block has collided with anything in the Group block_list
     # The True flag will remove the sprite in block_list
-    blocks_hit_list = pygame.sprite.spritecollide(player, block_list, True)  
-     
+    blocks_hit_list = pygame.sprite.spritecollide(player, block_list, True)
+
     # Check the list of colliding sprites, and add one to the score for each one
     for block in blocks_hit_list:
         score +=1
-       
+
    .. ## pygame.sprite.spritecollide ##
 
 .. function:: collide_rect

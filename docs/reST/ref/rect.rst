@@ -8,16 +8,19 @@
 .. class:: Rect
 
    | :sl:`pygame object for storing rectangular coordinates`
-   | :sg:`Rect(left, top, width, height) -> Rect`
-   | :sg:`Rect((left, top), (width, height)) -> Rect`
-   | :sg:`Rect(object) -> Rect`
+   | :sg:`Rect(left, top, width, height, /) -> Rect`
+   | :sg:`Rect((left, top), (width, height), /) -> Rect`
+   | :sg:`Rect(object, /) -> Rect`
    | :sg:`Rect() -> Rect`
-   | :sg:`FRect(left, top, width, height) -> FRect`
-   | :sg:`FRect((left, top), (width, height)) -> FRect`
-   | :sg:`FRect(object) -> FRect`
+   | :sg:`FRect(left, top, width, height, /) -> FRect`
+   | :sg:`FRect((left, top), (width, height), /) -> FRect`
+   | :sg:`FRect(object, /) -> FRect`
    | :sg:`FRect() -> FRect`
 
-   .. versionchanged:: 2.2 Since version 2.2 there is another class called FRect that serves the same purpose as as `Rect` but it can hold floats instead of integers.
+   .. versionadded:: 2.2
+      Added ``FRect`` class that is functionally identical to ``Rect`` but uses
+      floats instead of integers, enabling fractional precision and avoiding
+      truncation error while being interchangeable with standard Rects.
 
    Pygame uses Rect objects to store and manipulate rectangular areas. A Rect
    can be created from a combination of left, top, width, and height values.
@@ -48,7 +51,7 @@
        topleft, bottomleft, topright, bottomright
        midtop, midleft, midbottom, midright
        center, centerx, centery
-       size, width, height
+       size, width, height, relcenter
        w,h
 
    All of these attributes can be assigned to:
@@ -58,7 +61,7 @@
        rect1.right = 10
        rect2.center = (20,30)
 
-   Assigning to size, width or height changes the dimensions of the rectangle;
+   Assigning to size, width, height, or relcenter changes the dimensions of the rectangle;
    all other assignments move the rectangle without resizing it. Notice that
    some attributes are integers and others are pairs of integers.
 
@@ -93,6 +96,25 @@
       and ``__new__()`` is assumed to take no arguments. So these methods should be
       overridden if any extra attributes need to be copied.
 
+   .. versionadded:: 2.5.6
+      ``relcenter`` added to Rect / FRect. This will return a tuple containing half
+      the Rect's size; the center relative to the topleft of the Rect.
+      Setting it to a ``Point`` will modify the size of the rect to 2 times
+      the ``Point`` given. Below you can find a code example of how it should work:
+
+      .. code-block:: python
+
+         >>> my_rect = pygame.Rect(0, 0, 2, 2)
+         >>> my_rect.relcenter
+         (1, 1)
+         >>> my_rect.relcenter = (128, 128)
+         >>> my_rect.size
+         (256, 256)
+
+      Beware of non-integer relative centers! For Rects (but not FRects), ``relcenter``
+      will truncate the numbers in the returned tuple.
+
+
    .. method:: copy
 
       | :sl:`copy the rectangle`
@@ -122,17 +144,17 @@
       Same as the ``Rect.move()`` method, but operates in place.
 
       .. ## Rect.move_ip ##
-   
+
    .. method:: move_to
 
       | :sl:`moves the rectangle to the specified position`
       | :sg:`move_to(**kwargs) -> Rect`
-      
-      Returns a new rectangle that is moved to the given position. You must provide keyword
-      arguments to the method such as ``center``, ``left``, ``midbottom`` that correspond
-      to the rectangle's attributes and the method will return a new rectangle whose specified
-      attributes are set to the given value. 
-      
+
+      Returns a new rectangle that is moved to the given position and optionally resized.
+      You must provide keyword arguments to the method such as ``center``, ``left``,
+      ``midbottom``, ``size`` that correspond to the rectangle's attributes and the
+      method will return a new rectangle whose specified attributes are set to the given value.
+
       It is similar to :meth:`Surface.get_rect` but instead of a calling it as a surface method
       you call it as a rectangle method.
 
@@ -168,12 +190,14 @@
       | :sg:`scale_by(x, y) -> Rect`
 
       Returns a new rectangle with the size scaled by the given multipliers.
-      The rectangle remains centered around its current center. A single 
+      The rectangle remains centered around its current center. A single
       scalar or separate width and height scalars are allowed. Values above
       one will increase the size of the rectangle, whereas values between
       zero and one will decrease the size of the rectangle.
 
       .. versionadded:: 2.3.1
+
+      .. versionchanged:: 2.5.2 the argument ``scale_by`` can now be passed as a positional argument
 
       .. ## Rect.scale_by ##
 
@@ -186,6 +210,8 @@
       Same as the ``Rect.scale_by()`` method, but operates in place.
 
       .. versionadded:: 2.3.1
+
+      .. versionchanged:: 2.5.2 the argument ``scale_by`` can now be passed as a positional argument
 
       .. ## Rect.scale_by_ip ##
 
@@ -415,39 +441,39 @@
 
       .. code-block:: python
           :linenos:
-    
+
           Rect = pygame.Rect
           r = Rect(0, 0, 10, 10)
-          
+
           list_of_rects = [Rect(1, 1, 1, 1), Rect(2, 2, 2, 2)]
           indices0 = r.collidelistall(list_of_rects)
-          
+
           list_of_lists = [[1, 1, 1, 1], [2, 2, 2, 2]]
           indices1 = r.collidelistall(list_of_lists)
-          
+
           list_of_tuples = [(1, 1, 1, 1), (2, 2, 2, 2)]
           indices2 = r.collidelistall(list_of_tuples)
-          
+
           list_of_double_tuples = [((1, 1), (1, 1)), ((2, 2), (2, 2))]
           indices3 = r.collidelistall(list_of_double_tuples)
-          
+
           class ObjectWithRectAttribute(object):
               def __init__(self, r):
                   self.rect = r
-          
+
           list_of_object_with_rect_attribute = [
               ObjectWithRectAttribute(Rect(1, 1, 1, 1)),
               ObjectWithRectAttribute(Rect(2, 2, 2, 2)),
           ]
           indices4 = r.collidelistall(list_of_object_with_rect_attribute)
-          
+
           class ObjectWithCallableRectAttribute(object):
               def __init__(self, r):
                   self._rect = r
-          
+
               def rect(self):
                   return self._rect
-          
+
           list_of_object_with_callable_rect = [
               ObjectWithCallableRectAttribute(Rect(1, 1, 1, 1)),
               ObjectWithCallableRectAttribute(Rect(2, 2, 2, 2)),
@@ -595,7 +621,7 @@
 
       .. versionchanged:: 2.4.0
          ``values`` is now accepted as a keyword argument. Type Stub updated
-         to use boolean ``True`` or ``False``, but any truthy or falsy value 
+         to use boolean ``True`` or ``False``, but any truthy or falsy value
          will be valid.
 
       .. ## Rect.collidedict ##
@@ -618,7 +644,7 @@
 
       .. versionchanged:: 2.4.0
          ``values`` is now accepted as a keyword argument. Type Stub updated
-         to use boolean ``True`` or ``False``, but any truthy or falsy value 
+         to use boolean ``True`` or ``False``, but any truthy or falsy value
          will be valid.
 
       .. ## Rect.collidedictall ##

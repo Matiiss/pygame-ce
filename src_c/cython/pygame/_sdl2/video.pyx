@@ -9,10 +9,6 @@ from libc.stdlib cimport free, malloc
 WINDOWPOS_UNDEFINED = _SDL_WINDOWPOS_UNDEFINED
 WINDOWPOS_CENTERED = _SDL_WINDOWPOS_CENTERED
 
-MESSAGEBOX_ERROR = _SDL_MESSAGEBOX_ERROR
-MESSAGEBOX_WARNING = _SDL_MESSAGEBOX_WARNING
-MESSAGEBOX_INFORMATION = _SDL_MESSAGEBOX_INFORMATION
-
 SCALEQUALITY_NEAREST=SDL_ScaleMode.SDL_ScaleModeNearest
 SCALEQUALITY_LINEAR=SDL_ScaleMode.SDL_ScaleModeLinear
 SCALEQUALITY_BEST=SDL_ScaleMode.SDL_ScaleModeBest
@@ -66,86 +62,6 @@ def get_grabbed_window():
         return <object>ptr
     return None
 
-def messagebox(title, message,
-               Window window=None,
-               bint info=False,
-               bint warn=False,
-               bint error=False,
-               buttons=('OK', ),
-               return_button=0,
-               escape_button=0):
-    """Create a native GUI message box
-
-    Creates a native GUI message box.
-
-    :param str title: A title string, or ``None`` to omit a title.
-    :param str message: A message string.
-    :param bool info: If ``True``, display an info message.
-    :param bool warn: If ``True``, display a warning message.
-    :param bool error: If ``True``, display an error message.
-    :param tuple buttons: An optional sequence of button name strings to show to the user.
-    :param int return_button: Button index to use if the return key is hit (``-1`` for none).
-    :param int escape_button: Button index to use if the escape key is hit (``-1`` for none).
-    :return: The index of the button that was pushed.
-    """
-    # TODO: type check
-    # TODO: color scheme
-    cdef SDL_MessageBoxButtonData* c_buttons = NULL
-
-    cdef SDL_MessageBoxData data
-    data.flags = 0
-    if warn:
-        data.flags |= _SDL_MESSAGEBOX_WARNING
-    if error:
-        data.flags |= _SDL_MESSAGEBOX_ERROR
-    if info:
-        data.flags |= _SDL_MESSAGEBOX_INFORMATION
-    if not window:
-        data.window = NULL
-    else:
-        data.window = window._win
-    if title is not None:
-        title = title.encode('utf8')
-        data.title = title
-    else:
-        data.title = NULL
-    message = message.encode('utf8')
-    data.message = message
-    data.colorScheme = NULL
-
-    cdef SDL_MessageBoxButtonData button
-    if not buttons:
-        button.flags = _SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT |\
-                       _SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT
-        button.buttonid = 0
-        button.text = "OK"
-        data.buttons = &button
-        data.numbuttons = 1
-    else:
-        buttons_utf8 = [s.encode('utf8') for s in buttons]
-        data.numbuttons = <int>len(buttons)
-        c_buttons =\
-            <SDL_MessageBoxButtonData*>malloc(data.numbuttons * sizeof(SDL_MessageBoxButtonData))
-        if not c_buttons:
-            raise MemoryError()
-        for i, but in enumerate(reversed(buttons_utf8)):
-            c_buttons[i].flags = 0
-            c_buttons[i].buttonid = data.numbuttons - i - 1
-            if c_buttons[i].buttonid == return_button:
-                c_buttons[i].flags |= _SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT
-            if c_buttons[i].buttonid == escape_button:
-                c_buttons[i].flags |= _SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT
-            c_buttons[i].text = but
-        data.buttons = c_buttons
-
-    cdef int buttonid
-    if SDL_ShowMessageBox(&data, &buttonid):
-        free(c_buttons)
-        raise errorfnc()
-
-    free(c_buttons)
-    return buttonid
-
 globals()["Window"] = Window
 _Window = Window
 
@@ -167,7 +83,7 @@ cdef Uint32 format_from_depth(int depth):
                                       Rmask, Gmask, Bmask, Amask)
 
 
-# disable auto_pickle since it causes stubcheck error 
+# disable auto_pickle since it causes stubcheck error
 @cython.auto_pickle(False)
 cdef class Texture:
 
@@ -258,15 +174,8 @@ cdef class Texture:
         if not self._tex:
             raise error()
 
-        if not scale_quality is None:
-            if SDL_VERSION_ATLEAST(2,0,12):
-                SDL_SetTextureScaleMode(self._tex,scale_quality)
-            else:
-                SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,{
-                    0: b'nearest',
-                    1: b'linear',
-                    2: b'best'
-                }[scale_quality])
+        if scale_quality is not None:
+            SDL_SetTextureScaleMode(self._tex, scale_quality)
 
         self.width, self.height = width, height
 
@@ -320,7 +229,7 @@ cdef class Texture:
         """Get or set the blend mode for texture drawing operations
 
         Gets or sets the blend mode for the texture's drawing operations.
-        Valid blend modes are any of the ``BLENDMODE_*`` constants or a custom one. 
+        Valid blend modes are any of the ``BLENDMODE_*`` constants or a custom one.
         """
         # https://wiki.libsdl.org/SDL_GetTextureBlendMode
         cdef SDL_BlendMode blendMode
@@ -342,13 +251,13 @@ cdef class Texture:
         """Get or set the additional color value multiplied into texture drawing operations
         """
         cdef Uint8[4] rgba
-        
+
         # https://wiki.libsdl.org/SDL_GetTextureColorMod
         cdef int res = SDL_GetTextureColorMod(self._tex,
                                               &(rgba[0]),
                                               &(rgba[1]),
                                               &(rgba[2]))
-        rgba[3] = 255    
+        rgba[3] = 255
 
         if res < 0:
             raise error()
@@ -457,8 +366,7 @@ cdef class Texture:
         :param p2_mod: The second vertex color modulation.
         :param p3_mod: The third vertex color modulation.
         """
-        if not SDL_VERSION_ATLEAST(2, 0, 18):
-            raise error("draw_triangle requires SDL 2.0.18 or newer")
+
 
         cdef Uint8 _r_mod, _g_mod, _b_mod, _a_mod
         SDL_GetTextureColorMod(self._tex, &_r_mod, &_g_mod, &_b_mod)
@@ -507,8 +415,6 @@ cdef class Texture:
         :param p3_mod: The third vertex color modulation.
         :param p4_mod: The fourth vertex color modulation.
         """
-        if not SDL_VERSION_ATLEAST(2, 0, 18):
-            raise error("draw_quad requires SDL 2.0.18 or newer")
 
         cdef Uint8 _r_mod, _g_mod, _b_mod, _a_mod
         SDL_GetTextureColorMod(self._tex, &_r_mod, &_g_mod, &_b_mod)
@@ -570,7 +476,7 @@ cdef class Texture:
 
         if rectptr == NULL and area is not None:
             raise TypeError('area must be a rectangle or None')
-        
+
         cdef int dst_width, dst_height
         if rectptr == NULL:
             dst_width = self.width
@@ -578,7 +484,7 @@ cdef class Texture:
         else:
             dst_width = rect.w
             dst_height = rect.h
-        
+
         if dst_height > surf.h or dst_width > surf.w:
             # if the surface is smaller than the destination rect,
             # clip the rect to prevent segfault
@@ -619,8 +525,8 @@ cdef class Texture:
         if res < 0:
             raise error()
 
-# disable auto_pickle since it causes stubcheck error 
-@cython.auto_pickle(False) 
+# disable auto_pickle since it causes stubcheck error
+@cython.auto_pickle(False)
 cdef class Image:
 
     def __cinit__(self):
@@ -745,8 +651,8 @@ cdef class Image:
             self.flip_x,
             self.flip_y)
 
-# disable auto_pickle since it causes stubcheck error 
-@cython.auto_pickle(False) 
+# disable auto_pickle since it causes stubcheck error
+@cython.auto_pickle(False)
 cdef class Renderer:
 
     @classmethod
@@ -786,7 +692,7 @@ cdef class Renderer:
                            the refresh rate.
         :param bool target_texture: Whether the renderer should support setting
                                    :class:`Texture` objects as target textures, to
-                                   enable drawing onto them. 
+                                   enable drawing onto them.
 
 
         :class:`Renderer` objects provide a cross-platform API for rendering 2D
@@ -800,7 +706,7 @@ cdef class Renderer:
         If configured correctly and supported by an underlying rendering driver, Renderer
         objects can have a :class:`Texture` object temporarily set as a target texture
         (the Texture object must have been created with target texture usage support),
-        which allows those textures to be drawn onto. 
+        which allows those textures to be drawn onto.
 
         To present drawn content onto the window, :meth:`Renderer.present` should be
         called. :meth:`Renderer.clear` should be called to clear any drawn content
@@ -920,7 +826,7 @@ cdef class Renderer:
 
         :param area: A :class:`pygame.Rect` or tuple representing the
                      drawing area on the target, or ``None`` to use the
-                     entire area of the current rendering target. 
+                     entire area of the current rendering target.
         """
         # https://wiki.libsdl.org/SDL_RenderSetViewport
         if area is None:
@@ -1037,6 +943,35 @@ cdef class Renderer:
         if res < 0:
             raise error()
 
+    def coordinates_to_window(self, point):
+        """Translates renderer coordinates to window coordinates
+
+        :param point: The coordinates in render space.
+        """
+        cdef int wx
+        cdef int wy
+
+        # Note: Must be changed to SDL_RenderCoordinatesToWindow for SDL3
+        # https://wiki.libsdl.org/SDL3/SDL_RenderCoordinatesToWindow
+        SDL_RenderLogicalToWindow(self._renderer, point[0], point[1], &wx, &wy);
+
+        # Return float for future compatibility with SDL3's RenderCoordinatesToWindow
+        return (float(wx), float(wy))
+
+    def coordinates_from_window(self, point):
+        """Translates window coordinates to renderer coordinates
+
+        :param point: The coordinates in window space.
+        """
+        cdef float lx
+        cdef float ly
+
+        # Note: Must be changed to SDL_RenderCoordinatesFromWindow for SDL3
+        # https://wiki.libsdl.org/SDL3/SDL_RenderCoordinatesFromWindow
+        SDL_RenderWindowToLogical(self._renderer, point[0], point[1], &lx, &ly);
+
+        return (lx, ly)
+
     def draw_point(self, point):
         """Draw a point
 
@@ -1078,7 +1013,7 @@ cdef class Renderer:
         cdef SDL_FRect *frectptr
         cdef int res
 
-        
+
         frectptr = pgFRect_FromObject(rect, &_frect)
         if frectptr == NULL:
             raise TypeError('expected a rectangle')
@@ -1103,9 +1038,7 @@ cdef class Renderer:
 
     def fill_triangle(self, p1, p2, p3):
         # https://wiki.libsdl.org/SDL_RenderGeometry
-        if not SDL_VERSION_ATLEAST(2, 0, 18):
-            raise error("fill_triangle requires SDL 2.0.18 or newer")
-        
+
         cdef Uint8[4] rgba
 
         cdef int res = SDL_GetRenderDrawColor(self._renderer,
@@ -1144,9 +1077,7 @@ cdef class Renderer:
 
     def fill_quad(self, p1, p2, p3, p4):
         # https://wiki.libsdl.org/SDL_RenderGeometry
-        if not SDL_VERSION_ATLEAST(2, 0, 18):
-            raise error("fill_quad requires SDL 2.0.18 or newer")
-        
+
         cdef Uint8[4] rgba
 
         cdef int res = SDL_GetRenderDrawColor(self._renderer,

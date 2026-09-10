@@ -50,7 +50,7 @@
 /* At the time of writing of this comment, _camera does not compile on windows
  * while using the MinGW compiler (due to missing API). So we do a _MSC_VER
  * check here to compile this only under the MSVC compiler */
-#if defined(__WIN32__) && defined(_MSC_VER)
+#if defined(WIN32) && defined(_MSC_VER)
 #define PYGAME_WINDOWS_CAMERA 1
 
 #include <mfapi.h>
@@ -166,36 +166,37 @@ typedef struct pgCameraObject {
 
 /* internal functions for colorspace conversion */
 void
-colorspace(SDL_Surface *src, SDL_Surface *dst, int cspace);
+colorspace(SDL_Surface *src, PG_PixelFormat *src_fmt, SDL_Surface *dst,
+           int cspace);
 void
-rgb24_to_rgb(const void *src, void *dst, int length, SDL_PixelFormat *format);
+rgb24_to_rgb(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
-bgr32_to_rgb(const void *src, void *dst, int length, SDL_PixelFormat *format);
+bgr32_to_rgb(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
-rgb444_to_rgb(const void *src, void *dst, int length, SDL_PixelFormat *format);
+rgb444_to_rgb(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
 rgb_to_yuv(const void *src, void *dst, int length, unsigned long source,
-           SDL_PixelFormat *format);
+           PG_PixelFormat *format);
 void
 rgb_to_hsv(const void *src, void *dst, int length, unsigned long source,
-           SDL_PixelFormat *format);
+           PG_PixelFormat *format);
 void
-yuyv_to_rgb(const void *src, void *dst, int length, SDL_PixelFormat *format);
+yuyv_to_rgb(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
-yuyv_to_yuv(const void *src, void *dst, int length, SDL_PixelFormat *format);
+yuyv_to_yuv(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
-uyvy_to_rgb(const void *src, void *dst, int length, SDL_PixelFormat *format);
+uyvy_to_rgb(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
-uyvy_to_yuv(const void *src, void *dst, int length, SDL_PixelFormat *format);
+uyvy_to_yuv(const void *src, void *dst, int length, PG_PixelFormat *format);
 void
 sbggr8_to_rgb(const void *src, void *dst, int width, int height,
-              SDL_PixelFormat *format);
+              PG_PixelFormat *format);
 void
 yuv420_to_rgb(const void *src, void *dst, int width, int height,
-              SDL_PixelFormat *format);
+              PG_PixelFormat *format);
 void
 yuv420_to_yuv(const void *src, void *dst, int width, int height,
-              SDL_PixelFormat *format);
+              PG_PixelFormat *format);
 
 #if defined(__unix__)
 /* internal functions specific to v4l2 */

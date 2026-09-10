@@ -378,8 +378,7 @@ buffer_get_obj(BufferObject *self, void *closure)
     if (!self->view_p->obj) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(self->view_p->obj);
-    return self->view_p->obj;
+    return Py_NewRef(self->view_p->obj);
 }
 
 static int
@@ -397,8 +396,7 @@ buffer_set_obj(BufferObject *self, PyObject *value, void *closure)
     }
     tmp = self->view_p->obj;
     if (value != Py_None) {
-        Py_INCREF(value);
-        self->view_p->obj = value;
+        self->view_p->obj = Py_NewRef(value);
     }
     else {
         self->view_p->obj = 0;
@@ -853,14 +851,6 @@ MODINIT_DEFINE(newbuffer)
                                          NULL,
                                          NULL};
 
-    /* prepare exported types */
-    if (PyType_Ready(&Py_buffer_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&BufferMixin_Type) < 0) {
-        return NULL;
-    }
-
 #define bufferproxy_docs ""
 
     /* create the module */
@@ -869,16 +859,11 @@ MODINIT_DEFINE(newbuffer)
         return NULL;
     }
 
-    Py_INCREF(&BufferMixin_Type);
-    if (PyModule_AddObject(module, "BufferMixin",
-                           (PyObject *)&BufferMixin_Type)) {
-        Py_DECREF(&BufferMixin_Type);
+    if (PyModule_AddType(module, &BufferMixin_Type)) {
         Py_DECREF(module);
         return NULL;
     }
-    Py_INCREF(&Py_buffer_Type);
-    if (PyModule_AddObject(module, "Py_buffer", (PyObject *)&Py_buffer_Type)) {
-        Py_DECREF(&Py_buffer_Type);
+    if (PyModule_AddType(module, &Py_buffer_Type)) {
         Py_DECREF(module);
         return NULL;
     }

@@ -40,18 +40,8 @@ export PG_BASE_MESON_FLAGS="--prefix=$PG_DEP_PREFIX \
     -Ddefault_library=shared"
 
 if [[ "$MAC_ARCH" == "arm64" ]]; then
-    # for scripts using ./configure to make arm64 binaries
-    export CC="clang -target arm64-apple-macos11.0"
-    export CXX="clang++ -target arm64-apple-macos11.0"
-
-    # This does not do anything actually, but without this ./configure errors
-    export PG_BASE_CONFIGURE_FLAGS="$PG_BASE_CONFIGURE_FLAGS --host=aarch64-apple-darwin20.0.0"
-
-    # configure cmake to cross-compile
-    export PG_BASE_CMAKE_FLAGS="$PG_BASE_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
-
-    # configure meson to cross-compile
-    export PG_BASE_MESON_FLAGS="$PG_BASE_MESON_FLAGS --cross-file $(pwd)/macos_arm64.ini"
+    # needs native-file that has correct macosx deployment target
+    export PG_BASE_MESON_FLAGS="$PG_BASE_MESON_FLAGS --native-file $(pwd)/macos_arm64.ini"
 
     # we don't need mac 10.9 support while compiling for apple M1 macs
     export MACOSX_DEPLOYMENT_TARGET=11.0
@@ -59,12 +49,21 @@ else
     # install NASM to generate optimised x86_64 libjpegturbo builds
     brew install nasm
 
+    # for scripts using ./configure to make x86_64 binaries
+    export CC="clang -target x86_64-apple-macos10.11"
+    export CXX="clang++ -target x86_64-apple-macos10.11"
+
+    export PG_BASE_CONFIGURE_FLAGS="$PG_BASE_CONFIGURE_FLAGS --host=x86_64-apple-darwin"
+
+    # configure cmake to cross-compile
+    export PG_BASE_CMAKE_FLAGS="$PG_BASE_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES=x86_64"
+
     # SDL 2.26.5 new minimum macos is 10.11, so we build our x86 mac deps
     # for 10.11 as well.
     export MACOSX_DEPLOYMENT_TARGET=10.11
 
-    # needs native-file that has correct macosx deployment target
-    export PG_BASE_MESON_FLAGS="$PG_BASE_MESON_FLAGS --native-file $(pwd)/macos_x86_64.ini"
+    # configure meson to cross-compile with correct target
+    export PG_BASE_MESON_FLAGS="$PG_BASE_MESON_FLAGS --cross-file $(pwd)/macos_x86_64.ini"
 fi
 
 cd ../manylinux-build/docker_base
@@ -74,6 +73,9 @@ cd ../manylinux-build/docker_base
 
 # install some buildtools
 bash buildtools/install.sh
+
+# sdl dep
+bash libsamplerate/build-libsamplerate.sh
 
 # sdl_image deps
 bash zlib-ng/build-zlib-ng.sh
@@ -97,7 +99,7 @@ bash wavpack/build-wavpack.sh
 
 # fluidsynth (for sdl_mixer)
 # bash gettext/build-gettext.sh
-bash glib/build-glib.sh
+# bash glib/build-glib.sh
 bash sndfile/build-sndfile.sh
 bash fluidsynth/build-fluidsynth.sh
 

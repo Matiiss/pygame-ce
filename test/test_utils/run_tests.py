@@ -9,31 +9,31 @@ test_runner_mod = test_pkg_name + ".test_utils.test_runner"
 if is_pygame_pkg:
     from pygame.tests.test_utils import import_submodule
     from pygame.tests.test_utils.test_runner import (
-        prepare_test_env,
-        run_test,
+        TEST_RESULTS_START,
         combine_results,
         get_test_results,
-        TEST_RESULTS_START,
+        prepare_test_env,
+        run_test,
     )
 else:
     from test.test_utils import import_submodule
     from test.test_utils.test_runner import (
-        prepare_test_env,
-        run_test,
+        TEST_RESULTS_START,
         combine_results,
         get_test_results,
-        TEST_RESULTS_START,
+        prepare_test_env,
+        run_test,
     )
-import pygame
-import pygame.threads
-
 import os
+import random
 import re
 import shutil
 import tempfile
 import time
-import random
+from concurrent.futures import ThreadPoolExecutor
 from pprint import pformat
+
+import pygame
 
 was_run = False
 
@@ -232,10 +232,11 @@ def run(*args, **kwds):
         else:
             from test.test_utils.async_sub import proc_in_time_or_kill
 
-        pass_on_args = ["--exclude", ",".join(option_exclude)]
-        for field in ["randomize", "incomplete", "unbuffered", "verbosity"]:
-            if kwds.get(field, False):
-                pass_on_args.append("--" + field)
+        pass_on_args = ["--exclude", ",".join(option_exclude)] + [
+            f"--{field}"
+            for field in ("randomize", "incomplete", "unbuffered", "verbosity")
+            if kwds.get(field)
+        ]
 
         def sub_test(module):
             print(f"loading {module}")
@@ -250,41 +251,34 @@ def run(*args, **kwds):
                 ),
             )
 
-        if option_multi_thread > 1:
+        with ThreadPoolExecutor(max_workers=option_multi_thread) as executor:
+            t = time.time()
 
-            def tmap(f, args):
-                return pygame.threads.tmap(
-                    f, args, stop_on_error=False, num_workers=option_multi_thread
+            for module, cmd, (return_code, raw_return) in executor.map(
+                sub_test, test_modules
+            ):
+                test_file = f"{os.path.join(test_subdir, module)}.py"
+                cmd, test_env, working_dir = cmd
+
+                test_results = get_test_results(raw_return)
+                if test_results:
+                    results.update(test_results)
+                else:
+                    results[module] = {}
+
+                results[module].update(
+                    {
+                        "return_code": return_code,
+                        "raw_return": raw_return,
+                        "cmd": cmd,
+                        "test_file": test_file,
+                        "test_env": test_env,
+                        "working_dir": working_dir,
+                        "module": module,
+                    }
                 )
 
-        else:
-            tmap = map
-
-        t = time.time()
-
-        for module, cmd, (return_code, raw_return) in tmap(sub_test, test_modules):
-            test_file = f"{os.path.join(test_subdir, module)}.py"
-            cmd, test_env, working_dir = cmd
-
-            test_results = get_test_results(raw_return)
-            if test_results:
-                results.update(test_results)
-            else:
-                results[module] = {}
-
-            results[module].update(
-                dict(
-                    return_code=return_code,
-                    raw_return=raw_return,
-                    cmd=cmd,
-                    test_file=test_file,
-                    test_env=test_env,
-                    working_dir=working_dir,
-                    module=module,
-                )
-            )
-
-        t = time.time() - t
+            t = time.time() - t
 
     ###########################################################################
     # Output Results

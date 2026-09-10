@@ -205,22 +205,49 @@ object instead of the module, which can be used to test for availability.
 
    .. ## pygame.encode_file_path ##
 
-.. function:: print_debug_info
-   
-   | :sl:`retrieves useful information for debugging and issue-reporting purposes`
-   | :sg:`print_debug_info(filename=None) -> None`
+.. function:: get_debug_info
+
+   | :sl:`Retrieves useful information for debugging and issue-reporting purposes`
+   | :sg:`get_debug_info() -> str`
 
    Constructs a string containing details on the system, the python interpreter,
-   the pygame version, and the linked and compiled versions of the libraries that
-   pygame wraps. If ``filename`` is ``None``, then the string is printed into the
-   console. Otherwise, the debug string is written to the specified file.
+   the pygame version, the linked and compiled versions of the libraries that
+   pygame wraps, and the display and mixer drivers.
 
    .. note::
       If ``pygame.freetype`` has not been initialized with :func:`pygame.init` or :func:`pygame.freetype.init`,
       then the linked and compiled versions of FreeType will be "Unk" since this information is not
-      available before initialization. 
+      available before initialization.
+
+   .. note::
+      If the display has never been initialized using :func:`pygame.init`, :func:`pygame.display.init`, or by
+      constructing a Window object, then the display driver will be "Display Not Initialized" because that
+      information is not yet available.
+
+   .. note::
+      If ``pygame.mixer`` has not been initialized with :func:`pygame.init` or :func:`pygame.mixer.init`,
+      then the mixer driver will be displayed as "Mixer Not Initialized" because that information is not
+      yet available.
+
+   .. versionadded:: 3.0.0
+
+   .. ## pygame.get_debug_info ##
+
+.. function:: print_debug_info
+
+   | :sl:`prints useful information for debugging and issue-reporting purposes`
+   | :sg:`print_debug_info() -> None`
+
+   Prints the output of :func:`pygame.get_debug_info` to console.
 
    .. versionadded:: 2.1.4
+
+   .. versionchanged:: 2.5.0 Added display and mixer driver outputs.
+
+   .. versionchanged:: 2.5.4 Added GIL status to the output.
+
+   .. versionchanged:: 3.0.0
+      Removed ``filename`` argument, use the new :func:`pygame.get_debug_info` function if you need to write to file.
 
    .. ## pygame.print_debug_info ##
 
@@ -288,12 +315,12 @@ check which version of pygame has been imported.
    package was built. If the identifier ends with a plus sign '+' then the
    package contains uncommitted changes. Please include this revision number
    in bug reports, especially for non-release pygame builds.
-   
-   Important note: pygame development has moved to github, this variable is 
+
+   Important note: pygame development has moved to github, this variable is
    obsolete now. As soon as development shifted to github, this variable started
-   returning an empty string ``""``. 
+   returning an empty string ``""``.
    It has always been returning an empty string since ``v1.9.5``.
-   
+
    .. versionchangedold:: 1.9.5
       Always returns an empty string ``""``.
 
@@ -401,7 +428,7 @@ available. Must be set before calling :func:`pygame.display.set_mode()`.
 This makes pygame use the SDL2 blitter for all alpha
 blending. The SDL2 blitter is sometimes faster than
 the default blitter but uses a different formula so
-the final colours may differ. Must be set before
+the final colors may differ. Must be set before
 :func:`pygame.init()` is called.
 
 |
@@ -415,6 +442,9 @@ This stops the welcome message popping up in the
 console that tells you which version of python,
 pygame & SDL you are using. Must be set before
 importing pygame.
+
+.. note::
+   Support prompt entirely removed in pygame-ce 3.0.0.
 
 |
 
@@ -559,6 +589,3 @@ where this is set to 0 by default.
 
 This hint only affects the windows platform, other platforms can control DPI awareness
 via a Window creation keyword parameter called "allow_high_dpi".
-
-
-

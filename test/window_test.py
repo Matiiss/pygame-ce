@@ -1,11 +1,19 @@
-import unittest
-import pygame
 import os
+import platform
+import unittest
 
+import pygame
 from pygame import Window
 from pygame.version import SDL
 
 pygame.init()
+
+
+IS_PYPY = "PyPy" == platform.python_implementation()
+
+pygame.display.init()
+is_wayland = pygame.display.get_driver() == "wayland"
+pygame.display.quit()
 
 
 class WindowTypeTest(unittest.TestCase):
@@ -34,11 +42,10 @@ class WindowTypeTest(unittest.TestCase):
         self.win.grab_mouse = False
         self.assertFalse(self.win.grab_mouse)
 
-        if SDL >= (2, 0, 16):
-            self.win.grab_keyboard = True
-            self.assertTrue(self.win.grab_keyboard)
-            self.win.grab_keyboard = False
-            self.assertFalse(self.win.grab_keyboard)
+        self.win.grab_keyboard = True
+        self.assertTrue(self.win.grab_keyboard)
+        self.win.grab_keyboard = False
+        self.assertFalse(self.win.grab_keyboard)
 
     def test_mouse_keyboard_grabbed(self):
         self.assertIsInstance(getattr(self.win, "mouse_grabbed"), bool)
@@ -83,10 +90,6 @@ class WindowTypeTest(unittest.TestCase):
         self.win.borderless = False
         self.assertFalse(self.win.borderless)
 
-    @unittest.skipIf(
-        SDL < (2, 0, 16),
-        "requires SDL 2.0.16+",
-    )
     def test_always_on_top(self):
         self.bool_attr_test("always_on_top")
 
@@ -94,10 +97,7 @@ class WindowTypeTest(unittest.TestCase):
         os.environ.get("SDL_VIDEODRIVER") == pygame.NULL_VIDEODRIVER,
         "requires the SDL_VIDEODRIVER to be a non-null value",
     )
-    @unittest.skipIf(
-        SDL < (2, 0, 16),
-        "requires SDL 2.0.16+",
-    )
+    @unittest.skipIf(is_wayland, "not supported on wayland")
     def test_always_on_top_set(self):
         self.win.always_on_top = True
         self.assertTrue(self.win.always_on_top)
@@ -105,8 +105,8 @@ class WindowTypeTest(unittest.TestCase):
         self.assertFalse(self.win.always_on_top)
 
     @unittest.skipIf(
-        SDL < (2, 0, 18),
-        "requires SDL 2.0.18+",
+        os.environ.get("SDL_VIDEODRIVER") == pygame.NULL_VIDEODRIVER,
+        "requires SDL_VIDEODRIVER to be a non-null value",
     )
     def test_mouse_rect(self):
         self.win.mouse_rect = None
@@ -145,9 +145,11 @@ class WindowTypeTest(unittest.TestCase):
 
         self.win.size = (640, 480)
 
+    @unittest.skipIf(is_wayland, "not supported on wayland")
     def test_position(self):
-        self.win.position = (12, 34)
-        self.assertTupleEqual(self.win.position, (12, 34))
+        new_pos = (self.win.position[0] + 20, self.win.position[1] + 10)
+        self.win.position = new_pos
+        self.assertTupleEqual(self.win.position, new_pos)
 
         self.win.position = pygame.WINDOWPOS_CENTERED
 
@@ -155,8 +157,8 @@ class WindowTypeTest(unittest.TestCase):
         self.assertRaises(TypeError, lambda: setattr(self.win, "position", 123))
 
         # test set position when init
-        win = Window(position=(20, 48))
-        self.assertTupleEqual((20, 48), win.position)
+        win = Window(position=new_pos)
+        self.assertTupleEqual(new_pos, win.position)
         win.destroy()
 
         self.assertRaises(TypeError, lambda: Window(position=123))
@@ -231,14 +233,11 @@ class WindowTypeTest(unittest.TestCase):
             ValueError, lambda: setattr(self.win, "maximum_size", (50, 50))
         )
 
-        # minimum size should be able to equal to maxium size
-        # This test fails in SDL <= 2.0.12
-        # have been fixed after SDL 2.0.18
-        if SDL >= (2, 0, 18):
-            self.win.minimum_size = (60, 60)
-            self.win.maximum_size = (60, 60)
-            self.assertTupleEqual(self.win.maximum_size, (60, 60))
-            self.assertTupleEqual(self.win.minimum_size, (60, 60))
+        # minimum size should be able to equal to maximum size
+        self.win.minimum_size = (60, 60)
+        self.win.maximum_size = (60, 60)
+        self.assertTupleEqual(self.win.maximum_size, (60, 60))
+        self.assertTupleEqual(self.win.minimum_size, (60, 60))
 
     def test_opacity(self):
         # Setting is not supported at all with SDL_VIDEODRIVER = pygame.NULL_VIDEODRIVER,
@@ -250,6 +249,7 @@ class WindowTypeTest(unittest.TestCase):
         os.environ.get("SDL_VIDEODRIVER") == pygame.NULL_VIDEODRIVER,
         "requires the SDL_VIDEODRIVER to be a non-null value",
     )
+    @unittest.skipIf(is_wayland, "not supported on wayland")
     def test_opacity_set(self):
         self.win.opacity = 0.5
         self.assertEqual(self.win.opacity, 0.5)
@@ -265,20 +265,29 @@ class WindowTypeTest(unittest.TestCase):
         self.assertRaises(TypeError, lambda: setattr(self.win, "opacity", "null str"))
 
     def test_init_flags(self):
+        # test no opengl by default
+        win = Window()
+        self.assertFalse(win.opengl)
+        win.destroy()
+
         # test borderless
         win = Window(borderless=True)
         self.assertTrue(win.borderless)
         win.destroy()
 
         # test always_on_top
-        if SDL >= (2, 0, 16):
-            win = Window(always_on_top=True)
-            self.assertTrue(win.always_on_top)
-            win.destroy()
+        win = Window(always_on_top=True)
+        self.assertTrue(win.always_on_top)
+        win.destroy()
 
         # test resizable
         win = Window(resizable=True)
         self.assertTrue(win.resizable)
+        win.destroy()
+
+        # test utility
+        win = Window(utility=True)
+        self.assertTrue(win.utility)
         win.destroy()
 
         # should raise a TypeError if keyword is random
@@ -309,16 +318,18 @@ class WindowTypeTest(unittest.TestCase):
         pygame.init()
 
     def test_from_display_module(self):
-        pygame.display.set_mode((640, 480))
+        surf = pygame.display.set_mode((640, 480))
 
         win1 = Window.from_display_module()
         win2 = Window.from_display_module()
 
         self.assertIs(win1, win2)
+        self.assertIs(win1.get_surface(), surf)
 
         pygame.display.quit()
         pygame.init()
 
+    @unittest.skipIf(IS_PYPY, "for some reason this test is flaky on pypy")
     def test_window_surface(self):
         win = Window(size=(640, 480))
         surf = win.get_surface()
@@ -336,6 +347,7 @@ class WindowTypeTest(unittest.TestCase):
         win.destroy()
         self.assertRaises(pygame.error, lambda: surf.fill((0, 0, 0)))
 
+    @unittest.skipIf(IS_PYPY, "for some reason this test is flaky on pypy")
     def test_window_surface_with_display_module(self):
         # get_surface() should raise an error if the set_mode() is not called.
         pygame.display.set_mode((640, 480))
@@ -368,6 +380,78 @@ class WindowTypeTest(unittest.TestCase):
             win.flip,
         )
         win.destroy()
+
+    @unittest.skipIf(
+        os.environ.get("SDL_VIDEODRIVER") == pygame.NULL_VIDEODRIVER,
+        "OpenGL requires a non-null SDL_VIDEODRIVER",
+    )
+    def test_window_opengl(self):
+        win1 = Window(opengl=True)
+        self.assertTrue(win1.opengl)
+        win1.flip()
+        win1.destroy()
+
+        win2 = Window(opengl=False)
+        self.assertFalse(win2.opengl)
+        win2.get_surface()
+        win2.flip()
+        win2.destroy()
+
+        pygame.display.set_mode((640, 480), pygame.OPENGL)
+        win = Window.from_display_module()
+        self.assertTrue(win.opengl)
+        pygame.display.quit()
+        pygame.init()
+
+    @unittest.skipIf(IS_PYPY, "for some reason this test is flaky on pypy")
+    def test_window_subclassable(self):
+        class WindowSubclass(Window):
+            def __init__(self, title="Different title", size=(640, 480), **flags):
+                super().__init__(title, size, pygame.WINDOWPOS_CENTERED, **flags)
+                self.attribute = 10
+
+        window = WindowSubclass()
+        self.assertTrue(issubclass(WindowSubclass, Window))
+        self.assertIsInstance(window, WindowSubclass)
+        self.assertEqual(window.title, "Different title")
+        self.assertEqual(window.attribute, 10)
+        window.destroy()
+
+        pygame.display.set_mode((200, 200))
+        window = WindowSubclass.from_display_module()
+        self.assertIsInstance(window, WindowSubclass)
+        self.assertEqual(window.size, (200, 200))
+
+    def test_window_flash(self):
+        window = pygame.Window()
+
+        with self.assertRaises(TypeError):
+            window.flash("string")
+            window.flash(2.2)
+            window.flash([0])
+
+        with self.assertRaises(ValueError):
+            window.flash(-1)
+            window.flash(3)
+
+        for operation in [
+            pygame.FLASH_CANCEL,
+            pygame.FLASH_BRIEFLY,
+            pygame.FLASH_UNTIL_FOCUSED,
+        ]:
+            try:
+                result = window.flash(operation)
+                self.assertIsNone(result)
+            except pygame.error:
+                pass
+
+    def test_window_focused(self):
+        window = pygame.Window()
+        self.assertIsInstance(window.focused, bool)
+
+    def test_handle(self):
+        window = pygame.Window()
+        self.assertIsInstance(window.handle, int)
 
     def tearDown(self):
         self.win.destroy()

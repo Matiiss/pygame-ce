@@ -9,9 +9,7 @@
 | :sl:`pygame module for loading and playing sounds`
 
 This module contains classes for loading Sound objects and controlling
-playback. The mixer module is optional and depends on SDL_mixer. Your program
-should test that :mod:`pygame.mixer` is available and initialized before using
-it.
+playback.
 
 The mixer module has a limited number of channels for playback of sounds.
 Usually programs tell pygame to start playing audio and it selects an available
@@ -30,9 +28,7 @@ streams the music from the files without loading music at once into memory.
 
 The mixer module must be initialized like other pygame modules, but it has some
 extra conditions. The ``pygame.mixer.init()`` function takes several optional
-arguments to control the playback rate and sample size. Pygame will default to
-reasonable values, but pygame cannot perform Sound resampling, so the mixer
-should be initialized to match the values of your audio resources.
+arguments to control the playback rate and sample size.
 
 ``NOTE``: For less laggy sound use a smaller buffer size. The default
 is set to reduce the chance of scratchy sounds on some computers. You can
@@ -68,7 +64,7 @@ The following file formats are supported
 
    Initialize the mixer module for Sound loading and playback. The default
    arguments can be overridden to provide specific audio mixing. Keyword
-   arguments are accepted. For backwards compatibility, argument values of 
+   arguments are accepted. For backwards compatibility, argument values of
    0 are replaced with the startup defaults, except for ``allowedchanges``,
    where -1 is used. (startup defaults may be changed by a :func:`pre_init` call).
 
@@ -79,6 +75,9 @@ The following file formats are supported
 
    The channels argument is used to specify whether to use mono or stereo. 1
    for mono and 2 for stereo.
+   ``NOTE``: The channels argument is not related to the number
+   of channels for playback of sounds, that you can get with the function
+   "get_num_channels" or set with the function "set_num_channels" (see below).
 
    The buffer argument controls the number of internal samples used in the
    sound mixer. The default value should work for most cases. It can be lowered
@@ -88,7 +87,7 @@ The following file formats are supported
    the next nearest power of 2).
 
    The devicename parameter is the name of sound device to open for audio
-   playback.  Allowed device names will vary based on the host system.
+   playback. Allowed device names will vary based on the host system.
    If left as ``None`` then a sensible default will be chosen for you.
 
    Some platforms require the :mod:`pygame.mixer` module to be initialized
@@ -158,12 +157,24 @@ The following file formats are supported
 .. function:: get_init
 
    | :sl:`test if the mixer is initialized`
-   | :sg:`get_init() -> (frequency, format, channels)`
+   | :sg:`get_init() -> (frequency, format, channels) | None`
 
    If the mixer is initialized, this returns the playback arguments it is
    using. If the mixer has not been initialized this returns ``None``.
 
    .. ## pygame.mixer.get_init ##
+
+.. function:: get_driver
+
+   | :sl:`get the name of the current audio backend driver`
+   | :sg:`get_driver() -> str`
+
+   Pygame chooses one of many available audio backend drivers when it is
+   initialized. This returns the internal name used for the backend. This
+   function is intended to be used for getting diagnostic/debugging information.
+   This can be controlled with ``SDL_AUDIODRIVER`` environment variable.
+
+   .. versionadded:: 2.5.0
 
 .. function:: stop
 
@@ -208,7 +219,7 @@ The following file formats are supported
    | :sl:`set the total number of playback channels`
    | :sg:`set_num_channels(count, /) -> None`
 
-   Sets the number of available channels for the mixer. The default value is 8.
+   Sets the number of available playback channels for the mixer. The default value is 8.
    The value can be increased or decreased. If the value is decreased, sounds
    playing on the truncated channels are stopped.
 
@@ -229,7 +240,7 @@ The following file formats are supported
    | :sg:`set_reserved(count, /) -> count`
 
    The mixer can reserve any number of channels that will not be automatically
-   selected for playback by Sounds. This means that whenever you play a Sound 
+   selected for playback by Sounds. This means that whenever you play a Sound
    without specifying a channel, a reserved channel will never be used. If sounds
    are currently playing on the reserved channels they will not be stopped.
 
@@ -245,7 +256,7 @@ The following file formats are supported
 .. function:: find_channel
 
    | :sl:`find an unused channel`
-   | :sg:`find_channel(force=False) -> Channel`
+   | :sg:`find_channel(force=False) -> Channel | None`
 
    This will find and return an inactive Channel object. If there are no
    inactive Channels this function will return ``None``. If there are no
@@ -280,7 +291,7 @@ The following file formats are supported
    | :sl:`get the soundfont for playing midi music`
    | :sg:`get_soundfont() -> paths`
 
-   This gets the soundfont filepaths as a string (each path is separated by a semi-colon) 
+   This gets the soundfont filepaths as a string (each path is separated by a semi-colon)
    to be used in the playback of ``MID``, ``MIDI``, and ``KAR`` music file formats. If no
    soundfont is specified, the return type is ``None``.
 
@@ -297,7 +308,7 @@ The following file formats are supported
    | :sg:`get_busy() -> bool`
 
    Returns ``True`` if the mixer is busy mixing any channels. If the mixer is
-   idle then this return ``False``.
+   idle or uninitialized then this returns ``False``.
 
    .. ## pygame.mixer.get_busy ##
 
@@ -316,7 +327,7 @@ The following file formats are supported
    :rtype: tuple
 
    .. note::
-      The linked and compile version numbers should be the same.
+      The linked and compiled version numbers should be the same.
 
    .. versionaddedold:: 2.0.0
 
@@ -339,11 +350,11 @@ The following file formats are supported
    the initialize arguments for the mixer. A Unicode string can only be a file
    pathname. A bytes object can be either a pathname or a buffer object.
    Use the 'file' or 'buffer' keywords to avoid ambiguity; otherwise Sound may
-   guess wrong. If the array keyword is used, the object is expected to export 
+   guess wrong. If the array keyword is used, the object is expected to export
    a new buffer interface (The object is checked for a buffer interface first.)
 
    The Sound object represents actual sound sample data. Methods that change
-   the state of the Sound object will the all instances of the Sound playback.
+   the state of the Sound object will impact all instances of the Sound playback.
    A Sound object also exports a new buffer interface.
 
    The Sound can be loaded from an ``OGG`` audio file or from an uncompressed
@@ -353,15 +364,22 @@ The following file formats are supported
    it and the Sound object.
 
    For now buffer and array support is consistent with ``sndarray.make_sound``
-   for Numeric arrays, in that sample sign and byte order are ignored. This
+   for NumPy arrays, in that sample sign and byte order are ignored. This
    will change, either by correctly handling sign and byte order, or by raising
    an exception when different. Also, source samples are truncated to fit the
    audio sample size. This will not change.
+
+   .. note:: ``bytes(Sound)`` and ``bytearray(Sound)`` make use of the buffer
+             interface, which is implemented internally by ``pygame.mixer.Sound``.
+             Because of this, there is no need to directly implement ``__bytes__``.
 
    .. versionaddedold:: 1.8 ``pygame.mixer.Sound(buffer)``
    .. versionaddedold:: 1.9.2
       :class:`pygame.mixer.Sound` keyword arguments and array interface support
    .. versionaddedold:: 2.0.1 pathlib.Path support on Python 3.
+
+   .. versionchanged:: 2.5.2 This class is also available through the ``pygame.Sound``
+      alias.
 
    .. method:: play
 
@@ -424,6 +442,25 @@ The following file formats are supported
          | If value < 0.0, the volume will not be changed
          | If value > 1.0, the volume will be set to 1.0
 
+      .. note::
+         The values are internally converted and kept as integer values in range [0, 128], which means
+         that ``get_volume()`` may return a different volume than it was set to. For example,
+
+            >>> sound.set_volume(0.1)
+            >>> sound.get_volume()
+            0.09375
+
+         This is because when you ``set_volume(0.1)``, the volume is internally calculated like so
+
+            >>> int(0.1 * 128)
+            12
+
+         This means that some of the precision is lost, so when you retrieve it again using ``get_volume()``,
+         it is converted back to a ``float`` using that integer
+
+            >>> 12 / 128
+            0.09375
+
       .. ## Sound.set_volume ##
 
    .. method:: get_volume
@@ -431,7 +468,10 @@ The following file formats are supported
       | :sl:`get the playback volume`
       | :sg:`get_volume() -> value`
 
-      Return a value from 0.0 to 1.0 representing the volume for this Sound.
+      Return a value from 0.0 to 1.0 (inclusive) representing the volume for this Sound.
+
+      .. note::
+         See :func:`Sound.set_volume` for more information regarding the returned value
 
       .. ## Sound.get_volume ##
 
@@ -464,6 +504,26 @@ The following file formats are supported
 
       .. ## Sound.get_raw ##
 
+   .. method:: copy
+
+      | :sl:`return a new Sound object that is a deep copy of this Sound`
+      | :sg:`copy() -> Sound`
+      | :sg:`copy.copy(original_sound) -> Sound`
+
+      Return a new Sound object that is a deep copy of this Sound. The new Sound
+      will be just as if you loaded it from the same file on disk as you did the
+      original Sound. If the copy fails, a ``TypeError`` or :meth:`pygame.error`
+      exception will be raised.
+
+      If copying a subclass of ``mixer.Sound``, an instance of the same subclass
+      will be returned.
+
+      Also note that this functions as ``Sound.__copy__``.
+
+      .. versionadded:: 2.5.6
+
+      .. ## Sound.copy ##
+
    .. ## pygame.mixer.Sound ##
 
 .. class:: Channel
@@ -472,7 +532,7 @@ The following file formats are supported
    | :sg:`Channel(id) -> Channel`
 
    Return a Channel object for one of the current channels. The id must be a
-   value from 0 to the value of ``pygame.mixer.get_num_channels()``.
+   value from 0 up to, but not including, ``pygame.mixer.get_num_channels()``.
 
    The Channel object can be used to get fine control over the playback of
    Sounds. A channel can only playback a single Sound at time. Using channels
@@ -490,7 +550,7 @@ The following file formats are supported
       This simply returns the channel id used to create the ``Channel`` instance
       as a read-only attribute
 
-      ..versionadded:: 2.4.0
+      .. versionadded:: 2.4.0
 
       .. ## Channel.id ##
 
@@ -561,12 +621,29 @@ The following file formats are supported
 
       Set the position (angle, distance) of a playing channel.
 
-      `angle`: Angle is in degrees.
-      
+      `angle`: Angle in degrees.
+
       `distance`: Range from 0 to 255.
-      
+
+      .. warning:: This function currently fails and raises a
+         :exc:`pygame.error` when using 7.1 surround sound.
+         By default, the mixer module will use what the hardware is best
+         suited for, so this leads to hardware specific exceptions when using
+         this function.
+
+         One way of avoiding this is only using :func:`set_source_location`
+         with forced stereo. For example:
+
+         ::
+
+            pygame.mixer.pre_init(
+               channels=2,
+               allowedchanges=pygame.AUDIO_ALLOW_FREQUENCY_CHANGE,
+            )
+            pygame.init()
+
       .. versionadded:: 2.3.0
-      
+
       .. ## Channel.set_source_location ##
 
    .. method:: set_volume
@@ -577,13 +654,12 @@ The following file formats are supported
 
       Set the volume (loudness) of a playing sound. When a channel starts to
       play its volume value is reset. This only affects the current sound. The
-      value argument is between 0.0 and 1.0.
+      value argument is in the range of 0.0 to 1.0 (inclusive).
 
       If one argument is passed, it will be the volume of both speakers. If two
       arguments are passed and the mixer is in stereo mode, the first argument
       will be the volume of the left speaker and the second will be the volume
-      of the right speaker. (If the second argument is ``None``, the first
-      argument will be the volume of both speakers.)
+      of the right speaker.
 
       If the channel is playing a Sound on which ``set_volume()`` has also been
       called, both calls are taken into account. For example:
@@ -596,6 +672,9 @@ The following file formats are supported
           sound.set_volume(0.6)   # Now plays at 60% (previous value replaced).
           channel.set_volume(0.5) # Now plays at 30% (0.6 * 0.5).
 
+      .. note::
+         See :func:`Sound.set_volume` for more information regarding how the value is stored internally
+
       .. ## Channel.set_volume ##
 
    .. method:: get_volume
@@ -603,10 +682,14 @@ The following file formats are supported
       | :sl:`get the volume of the playing channel`
       | :sg:`get_volume() -> value`
 
-      Return the volume of the channel for the current playing sound. This does
+      Return the volume of the channel for the current playing sound
+      in the range of 0.0 to 1.0 (inclusive). This does
       not take into account stereo separation used by
       :meth:`Channel.set_volume`. The Sound object also has its own volume
       which is mixed with the channel.
+
+      .. note::
+         See :func:`Sound.set_volume` for more information regarding the returned value
 
       .. ## Channel.get_volume ##
 
@@ -623,7 +706,7 @@ The following file formats are supported
    .. method:: get_sound
 
       | :sl:`get the currently playing Sound`
-      | :sg:`get_sound() -> Sound`
+      | :sg:`get_sound() -> Sound | None`
 
       Return the actual Sound object currently playing on this channel. If the
       channel is idle ``None`` is returned.
@@ -649,7 +732,7 @@ The following file formats are supported
    .. method:: get_queue
 
       | :sl:`return any Sound that is queued`
-      | :sg:`get_queue() -> Sound`
+      | :sg:`get_queue() -> Sound | None`
 
       If a Sound is already queued on this channel it will be returned. Once
       the queued sound begins playback it will no longer be on the queue.

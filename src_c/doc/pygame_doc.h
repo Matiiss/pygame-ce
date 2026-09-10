@@ -1,4 +1,4 @@
-/* Auto generated file: with makeref.py .  Docs go in docs/reST/ref/ . */
+/* Auto generated file: with make_docs.py .  Docs go in docs/reST/ref/ . */
 #define DOC_ "the top level pygame package"
 #define DOC_ISCE "IS_CE = 1\nexists if current pygame is pygame-ce"
 #define DOC_INIT "init() -> (numpass, numfail)\ninitialize all imported pygame modules"
@@ -12,7 +12,8 @@
 #define DOC_REGISTERQUIT "register_quit(callable, /) -> None\nregister a function to be called when pygame quits"
 #define DOC_ENCODESTRING "encode_string([obj [, encoding [, errors [, etype]]]]) -> bytes or None\nEncode a Unicode or bytes object"
 #define DOC_ENCODEFILEPATH "encode_file_path([obj [, etype]]) -> bytes or None\nEncode a Unicode or bytes object as a file system path"
-#define DOC_PRINTDEBUGINFO "print_debug_info(filename=None) -> None\nretrieves useful information for debugging and issue-reporting purposes"
+#define DOC_GETDEBUGINFO "get_debug_info() -> str\nRetrieves useful information for debugging and issue-reporting purposes"
+#define DOC_PRINTDEBUGINFO "print_debug_info() -> None\nprints useful information for debugging and issue-reporting purposes"
 #define DOC_VERSION "small module containing version information"
 #define DOC_VERSION_VER "ver = '1.2'\nversion number as a string"
 #define DOC_VERSION_VERNUM "vernum = (1, 5, 3)\ntupled integers of the version"

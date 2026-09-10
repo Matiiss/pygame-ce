@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 if __name__ == "__main__":
     pkg_dir = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
@@ -56,7 +56,7 @@ opt_parser.add_option(
     "-s",
     "--usesubprocess",
     action="store_true",
-    help="run everything in a single process " " (default: use no subprocesses)",
+    help="run everything in a single process  (default: use no subprocesses)",
 )
 
 opt_parser.add_option(
@@ -240,8 +240,7 @@ TEST_RESULTS_RE = re.compile(_test_re_str, re.DOTALL | re.M)
 
 
 def get_test_results(raw_return):
-    test_results = TEST_RESULTS_RE.search(raw_return)
-    if test_results:
+    if test_results := TEST_RESULTS_RE.search(raw_return):
         try:
             return eval(test_results.group(1))
         except:

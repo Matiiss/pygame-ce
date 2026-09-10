@@ -30,7 +30,7 @@
 #include "ft_wrap.h"
 
 #define SIZEOF_PGFT_STRING(len) \
-    (sizeof(PGFT_String) + (Py_ssize_t)(len) * sizeof(PGFT_char))
+    (sizeof(PGFT_String) + (Py_ssize_t)((len) + 1) * sizeof(PGFT_char))
 
 static const PGFT_char UNICODE_HSA_START = 0xD800;
 static const PGFT_char UNICODE_HSA_END = 0xDBFF;
@@ -47,11 +47,11 @@ raise_unicode_error(const char *codec, PyObject *unistr, Py_ssize_t start,
                                         codec, unistr, (unsigned long)start,
                                         (unsigned long)end, reason);
 
-    if (!e)
+    if (!e) {
         return;
+    }
 
-    Py_INCREF(PyExc_UnicodeEncodeError);
-    PyErr_Restore(PyExc_UnicodeEncodeError, e, 0);
+    PyErr_Restore(Py_NewRef(PyExc_UnicodeEncodeError), e, 0);
 }
 
 /* Helper for _PGFT_EncodePyString to handle PyUnicode object */
@@ -65,8 +65,9 @@ _encode_unicode_string(PyObject *obj, int ucs4)
     int i, j;
     /* This Py_UCS4 src has to be freed later */
     Py_UCS4 *src = PyUnicode_AsUCS4Copy(obj);
-    if (!src)
+    if (!src) {
         return NULL;
+    }
     len = srclen = PyUnicode_GetLength(obj);
 
     if (!ucs4) {
@@ -163,14 +164,17 @@ _encode_bytes_string(PyObject *obj)
 PGFT_String *
 _PGFT_EncodePyString(PyObject *obj, int ucs4)
 {
-    if (PyUnicode_Check(obj))
+    if (PyUnicode_Check(obj)) {
         return _encode_unicode_string(obj, ucs4);
-    else if (PyBytes_Check(obj))
+    }
+    else if (PyBytes_Check(obj)) {
         return _encode_bytes_string(obj);
-    else
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
                      "Expected a Unicode or LATIN1 (bytes) string for text:"
                      " got type %.1024s",
                      Py_TYPE(obj)->tp_name);
+    }
     return NULL;
 }

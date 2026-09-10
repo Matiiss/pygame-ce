@@ -1,4 +1,5 @@
 import os
+import platform
 import time
 import unittest
 
@@ -7,6 +8,7 @@ import pygame.key
 
 # keys that are not tested for const-name match
 SKIPPED_KEYS = {"K_UNKNOWN"}
+SKIPPED_KEYS_NEW = {"K_MODE"}
 
 # This is the expected compat output
 KEY_NAME_COMPAT = {
@@ -168,6 +170,7 @@ KEY_NAME_COMPAT = {
 class KeyModuleTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        pygame.quit()
         pygame.init()
 
     @classmethod
@@ -186,9 +189,10 @@ class KeyModuleTest(unittest.TestCase):
         """does it import?"""
         import pygame.key
 
-    # fixme: test_get_focused failing systematically in some linux
-    # fixme: test_get_focused failing on SDL 2.0.18 on Windows
-    @unittest.skip("flaky test, and broken on 2.0.18 windows")
+    @unittest.skipIf(
+        not ("Windows" in platform.system() or "Darwin" in platform.system()),
+        "Not windows or macOS - we skip.",
+    )
     def test_get_focused(self):
         # This test fails in SDL2 in some linux
         # This test was skipped in SDL1.
@@ -284,7 +288,8 @@ class KeyModuleTest(unittest.TestCase):
             # This is a test for an implementation detail of name with use_compat=False
             # If this test breaks in the future for any key, it is safe to put skips on
             # failing keys (the implementation detail is documented as being unreliable)
-            self.assertEqual(pygame.key.key_code(alt_name), const_val)
+            if const_name not in SKIPPED_KEYS_NEW:
+                self.assertEqual(pygame.key.key_code(alt_name), const_val)
 
         self.assertRaises(TypeError, pygame.key.name, "fizzbuzz")
         self.assertRaises(TypeError, pygame.key.key_code, pygame.K_a)

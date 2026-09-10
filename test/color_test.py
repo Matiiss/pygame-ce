@@ -76,6 +76,33 @@ class ColorTypeTest(unittest.TestCase):
         self.assertEqual(len(c), 4)
         self.assertEqual(c, (100, 110, 120, 128))
 
+    def test_copy(self):
+        import copy
+
+        # test color.copy()
+        c = pygame.Color(10, 20, 30, 40)
+        c_copy = c.copy()
+        self.assertIs(type(c_copy), pygame.Color)
+        self.assertEqual(c_copy, c)
+        self.assertIsNot(c_copy, c)
+        self.assertEqual(len(c_copy), len(c))
+
+        # test color.__copy__()
+        c = pygame.Color(10, 20, 30, 40)
+        c_copy = c.__copy__()
+        self.assertIs(type(c_copy), pygame.Color)
+        self.assertEqual(c_copy, c)
+        self.assertIsNot(c_copy, c)
+        self.assertEqual(len(c_copy), len(c))
+
+        # test copy.copy()
+        c = pygame.Color(10, 20, 30, 40)
+        c_copy = copy.copy(c)
+        self.assertIs(type(c_copy), pygame.Color)
+        self.assertEqual(c_copy, c)
+        self.assertIsNot(c_copy, c)
+        self.assertEqual(len(c_copy), len(c))
+
     def test_invalid_html_hex_codes(self):
         # This was a problem with the way 2 digit hex numbers were
         # calculated. The test_hex_digits test is related to the fix.
@@ -773,97 +800,134 @@ class ColorTypeTest(unittest.TestCase):
         self.assertEqual(c.a, 146)
         self.assertEqual(int(c), int(0x33727592))
 
+    def test_bytes(self):
+        c = pygame.Color(0x00012345)
+        self.assertEqual(c.r, 0x00)
+        self.assertEqual(c.g, 0x01)
+        self.assertEqual(c.b, 0x23)
+        self.assertEqual(c.a, 0x45)
+
+        as_bytes = bytes(c)
+        self.assertEqual(as_bytes, bytes([0x00, 0x01, 0x23, 0x45]))
+        self.assertEqual(len(as_bytes), 4)
+
     def test_from_cmy(self):
         cmy = pygame.Color.from_cmy(0.5, 0.5, 0.5)
         cmy_tuple = pygame.Color.from_cmy((0.5, 0.5, 0.5))
+        cmy_instance = pygame.Color(0, 0, 0, 0).from_cmy(0.5, 0.5, 0.5)
 
         expected_cmy = (127, 127, 127)
 
         self.assertEqual(expected_cmy, cmy)
         self.assertEqual(expected_cmy, cmy_tuple)
+        self.assertEqual(expected_cmy, cmy_instance)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_cmy, pygame.Color.from_cmy(0.5, 0.5, 0.5, "lel", "foo")
-            )
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(expected_cmy, pygame.Color.from_cmy((0.5, 0.5, 0.5, 0.5)))
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_cmy(0.5, 0.5, 0.5, "lel", "foo")
+        )
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_cmy((0.5, 0.5, 0.5, 0.5))
+        )
 
     def test_from_hsva(self):
         hsva = pygame.Color.from_hsva(0, 100, 100, 100)
         hsva_tuple = pygame.Color.from_hsva((0, 100, 100, 100))
+        hsva_instance = pygame.Color(0, 0, 0, 0).from_hsva(0, 100, 100, 100)
 
         expected_hsva = (255, 0, 0)
 
         self.assertEqual(expected_hsva, hsva)
         self.assertEqual(expected_hsva, hsva_tuple)
+        self.assertEqual(expected_hsva, hsva_instance)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_hsva, pygame.Color.from_hsva(0, 100, 100, 100, "lel", "foo")
-            )
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_hsva, pygame.Color.from_hsva((0, 100, 100, 100, "lel"))
-            )
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_hsva(0, 100, 100, 100, "lel", "foo")
+        )
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_hsva((0, 100, 100, 100, "lel"))
+        )
 
     def test_from_hsla(self):
         hsla = pygame.Color.from_hsla(0, 100, 100, 100)
         hsla_tuple = pygame.Color.from_hsla((0, 100, 100, 100))
+        hsla_instance = pygame.Color(0, 0, 0, 0).from_hsla(0, 100, 100, 100)
 
         expected_hsla = (255, 255, 255)
 
         self.assertEqual(expected_hsla, hsla)
         self.assertEqual(expected_hsla, hsla_tuple)
+        self.assertEqual(expected_hsla, hsla_instance)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_hsla, pygame.Color.from_hsla(0, 100, 100, 100, "lel")
-            )
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_hsla, pygame.Color.from_hsla((0, 100, 100, 100, "lel", "foo"))
-            )
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_hsla(0, 100, 100, 100, "lel")
+        )
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_hsla((0, 100, 100, 100, "lel", "foo"))
+        )
 
     def test_from_i1i2i3(self):
         i1i2i3 = pygame.Color.from_i1i2i3(0, 0, 0)
         i1i2i3_tuple = pygame.Color.from_i1i2i3((0, 0, 0))
+        i1i2i3_instance = pygame.Color(0, 0, 0, 0).from_i1i2i3(0, 0, 0)
 
         expected_i1i2i3 = (0, 0, 0)
 
         self.assertEqual(expected_i1i2i3, i1i2i3)
         self.assertEqual(expected_i1i2i3, i1i2i3_tuple)
+        self.assertEqual(expected_i1i2i3, i1i2i3_instance)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_i1i2i3, pygame.Color.from_i1i2i3(0, 0, 0, "lel", "foo")
-            )
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(expected_i1i2i3, pygame.Color.from_i1i2i3((0, 0, 0, 0)))
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_i1i2i3(0, 0, 0, "lel", "foo")
+        )
+        self.assertRaises(ValueError, lambda: pygame.Color.from_i1i2i3((0, 0, 0, 0)))
 
     def test_from_normalized(self):
         normal = pygame.Color.from_normalized(1, 1, 1, 1)
         normal_tuple = pygame.Color.from_normalized((1, 1, 1, 1))
+        normal_instance = pygame.Color(0, 0, 0, 0).from_normalized(1, 1, 1, 1)
 
         expected_normal = (255, 255, 255, 255)
 
         self.assertEqual(expected_normal, normal)
         self.assertEqual(expected_normal, normal_tuple)
+        self.assertEqual(expected_normal, normal_instance)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_normal, pygame.Color.from_normalized(1, 1, 1, 1, "lel")
-            )
+        self.assertRaises(
+            ValueError, lambda: pygame.Color.from_normalized(1, 1, 1, 1, "lel")
+        )
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(
-                expected_normal,
-                pygame.Color.from_normalized((1, 1, 1, 1, "lel", "foo")),
-            )
+    def test_from_hex(self):
+        color1 = pygame.Color.from_hex("#FFFFFF")  # White
+        color2 = pygame.Color.from_hex("#000000")  # Black
+        color3 = pygame.Color.from_hex("#AAFF00")  # Random
+        color4 = pygame.Color.from_hex("#FF000080")  # Red (50% opacity)
+
+        color_instance1 = pygame.Color(0, 0, 0, 0).from_hex("#FFFFFF")
+        color_instance2 = pygame.Color(63, 12, 83).from_hex("#000000")
+        color_instance3 = pygame.Color(52, 31, 8, 255).from_hex("#AAFF00")
+        color_instance4 = pygame.Color("#E4A010").from_hex("#FF000080")
+
+        expected_color1 = (255, 255, 255, 255)
+        expected_color2 = (0, 0, 0, 255)
+        expected_color3 = (170, 255, 0, 255)
+        expected_color4 = (255, 0, 0, 128)
+
+        self.assertEqual(color1, expected_color1)
+        self.assertEqual(color2, expected_color2)
+        self.assertEqual(color3, expected_color3)
+        self.assertEqual(color4, expected_color4)
+
+        self.assertEqual(color_instance1, expected_color1)
+        self.assertEqual(color_instance2, expected_color2)
+        self.assertEqual(color_instance3, expected_color3)
+        self.assertEqual(color_instance4, expected_color4)
+
+        self.assertRaises(ValueError, lambda: pygame.Color.from_hex("#FFFFFG"))
+        self.assertRaises(ValueError, lambda: pygame.Color.from_hex("#FFFFFFF"))
+        self.assertRaises(ValueError, lambda: pygame.Color.from_hex("not-a-color"))
+        self.assertRaises(
+            TypeError, lambda: pygame.Color.from_hex("not-a-color", "lel")
+        )
 
     def test_normalize(self):
         c = pygame.Color(204, 38, 194, 55)
@@ -967,6 +1031,37 @@ class ColorTypeTest(unittest.TestCase):
             self.assertTrue(0 <= b <= 1)
             self.assertTrue(0 <= a <= 1)
 
+    def test_hex_property(self):
+        color = pygame.Color(255, 0, 255, 0)
+        hex = color.hex
+        self.assertEqual(hex, "#ff00ff00")
+
+        for c in rgba_combos_Color_generator():
+            col_hex = c.hex
+            self.assertIsInstance(col_hex, str)
+            self.assertEqual(len(col_hex), 9)
+            self.assertEqual(col_hex[0], "#")
+            for char in col_hex:
+                self.assertIn(char, "#0123456789abcdef")
+            self.assertEqual(c, pygame.Color(col_hex))
+
+        with self.assertRaises(TypeError):
+            color.hex = 0xFFFFFFFF
+        with self.assertRaises(AttributeError):
+            del color.hex
+
+        for value in ["FFFFFFFF", "#FFzzFF00", "0x FFFFFF", "#FF"]:
+            for v in [value, value.lower()]:
+                with self.assertRaises(ValueError):
+                    color.hex = v
+
+        for value in ["#FFFFFFFF", "#FFFFFF", "0xFFFFFFFF", "0xFFFFFF"]:
+            for v in [value, value.lower()]:
+                color.hex = v
+                self.assertEqual(
+                    (color.r, color.g, color.b, color.a), (255, 255, 255, 255)
+                )
+
     def test_issue_284(self):
         """PyColor OverflowError on HSVA with hue value of 360
 
@@ -1024,6 +1119,9 @@ class ColorTypeTest(unittest.TestCase):
     def test_normalized__sanity_testing_converted_should_not_raise(self):
         self.colorspaces_converted_should_not_raise("normalized")
 
+    def test_hex__sanity_testing_converted_should_not_raise(self):
+        self.colorspaces_converted_should_not_raise("hex")
+
     ################################################################################
 
     def colorspaces_converted_should_equate_bar_rounding(self, prop):
@@ -1038,7 +1136,7 @@ class ColorTypeTest(unittest.TestCase):
                 self.assertTrue(abs(other.b - c.b) <= 1)
                 self.assertTrue(abs(other.g - c.g) <= 1)
                 # CMY and I1I2I3 do not care about the alpha
-                if not prop in ("cmy", "i1i2i3"):
+                if prop not in ("cmy", "i1i2i3"):
                     self.assertTrue(abs(other.a - c.a) <= 1)
 
             except ValueError:
@@ -1059,11 +1157,16 @@ class ColorTypeTest(unittest.TestCase):
     def test_normalized__sanity_testing_converted_should_equate_bar_rounding(self):
         self.colorspaces_converted_should_equate_bar_rounding("normalized")
 
+    def test_hex__sanity_testing_converted_should_equate_bar_rounding(self):
+        self.colorspaces_converted_should_equate_bar_rounding("hex")
+
     def test_colorspaces_deprecated_large_sequence(self):
         c = pygame.Color("black")
         for space in ("hsla", "hsva", "i1i2i3", "cmy", "normalized"):
-            with self.assertWarns(DeprecationWarning):
-                setattr(c, space, (0, 0, 0, 0, "hehe 5th ignored member"))
+            with self.assertRaises(ValueError):
+                setattr(
+                    c, space, (0, 0, 0, 0, "HAHAHAHAHAHA, don't ignore 5th member :)")
+                )
 
     ################################################################################
 
@@ -1102,8 +1205,9 @@ class ColorTypeTest(unittest.TestCase):
 
     @unittest.skipIf(IS_PYPY, "PyPy has no ctypes")
     def test_arraystruct(self):
-        import pygame.tests.test_utils.arrinter as ai
         import ctypes as ct
+
+        import pygame.tests.test_utils.arrinter as ai
 
         c_byte_p = ct.POINTER(ct.c_byte)
         c = pygame.Color(5, 7, 13, 23)
@@ -1123,8 +1227,9 @@ class ColorTypeTest(unittest.TestCase):
                 self.assertEqual(data[j], c[j])
 
     def test_newbuf(self):
+        from ctypes import POINTER, c_uint8, cast
+
         from pygame.tests.test_utils import buftools
-        from ctypes import cast, POINTER, c_uint8
 
         class ColorImporter(buftools.Importer):
             def __init__(self, color, flags):
@@ -1436,8 +1541,41 @@ class ColorTypeTest(unittest.TestCase):
 class SubclassTest(unittest.TestCase):
     class MyColor(pygame.Color):
         def __init__(self, *args, **kwds):
-            super(SubclassTest.MyColor, self).__init__(*args, **kwds)
+            super().__init__(*args, **kwds)
             self.an_attribute = True
+            self.copy_dunder_called = False
+
+        def __copy__(self):
+            self.copy_dunder_called = True
+            return super().__copy__()
+
+    def test_copy(self):
+        import copy
+
+        # test color.copy()
+        c = self.MyColor(10, 20, 30, 40)
+        c_copy = c.copy()
+        self.assertIs(type(c_copy), type(c))
+        self.assertEqual(c_copy, c)
+        self.assertIsNot(c_copy, c)
+        self.assertEqual(len(c_copy), len(c))
+
+        # test color.__copy__()
+        c = self.MyColor(10, 20, 30, 40)
+        c_copy = c.__copy__()
+        self.assertIs(type(c_copy), type(c))
+        self.assertEqual(c_copy, c)
+        self.assertIsNot(c_copy, c)
+        self.assertEqual(len(c_copy), len(c))
+
+        # test copy.copy()
+        c = self.MyColor(10, 20, 30, 40)
+        c_copy = copy.copy(c)
+        self.assertIs(type(c_copy), type(c))
+        self.assertEqual(c_copy, c)
+        self.assertIsNot(c_copy, c)
+        self.assertEqual(len(c_copy), len(c))
+        self.assertTrue(c.copy_dunder_called)
 
     def test_add(self):
         mc1 = self.MyColor(128, 128, 128, 255)

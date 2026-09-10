@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" pygame.examples.moveit
+"""pygame.examples.moveit
 
 This is the full and final example from the Pygame Tutorial,
 "How Do I Make It Move". It creates 10 objects and animates
@@ -11,7 +11,9 @@ Note it's a bit scant on error checking, but it's easy to read. :]
 Fortunately, this is python, and we needn't wrestle with a pile of
 error codes.
 """
+
 import os
+
 import pygame
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -67,7 +69,7 @@ def main():
 
     player = load_image("player1.gif")
     entity = load_image("alien1.gif")
-    background = load_image("liquid.bmp")
+    background = load_image("liquid.webp")
 
     # scale the background image so that it fills the window and
     # successfully overwrites the old sprite position.

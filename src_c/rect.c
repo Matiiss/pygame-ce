@@ -133,11 +133,15 @@ four_floats_from_obj(PyObject *obj, float *val1, float *val2, float *val3,
 #define RectExport_setmidright pg_rect_setmidright
 #define RectExport_getcenter pg_rect_getcenter
 #define RectExport_setcenter pg_rect_setcenter
+#define RectExport_getrelcenter pg_rect_getrelcenter
+#define RectExport_setrelcenter pg_rect_setrelcenter
 #define RectExport_getsize pg_rect_getsize
 #define RectExport_setsize pg_rect_setsize
 #define RectImport_primitiveType int
+#define RectImport_PrimitiveTypeName "int"
 #define RectImport_RectCheck pgRect_Check
 #define RectImport_OtherRectCheck pgFRect_Check
+#define RectImport_OtherRectCheckExact pgFRect_CheckExact
 #define RectImport_RectCheckExact pgRect_CheckExact
 #define RectImport_innerRectStruct SDL_Rect
 #define RectImport_otherInnerRectStruct SDL_FRect
@@ -151,6 +155,7 @@ four_floats_from_obj(PyObject *obj, float *val1, float *val2, float *val3,
 #define RectImport_TypeObject pgRect_Type
 #define RectImport_IntersectRectAndLine SDL_IntersectRectAndLine
 #define RectImport_PyBuildValueFormat "i"
+#define RectImport_TupleFromTwoPrimitives pg_tuple_couple_from_values_int
 #define RectImport_ObjectName "pygame.rect.Rect"
 #define RectImport_PythonNumberCheck PyLong_Check
 #define RectImport_PythonNumberAsPrimitiveType PyLong_AsLong
@@ -248,11 +253,15 @@ four_floats_from_obj(PyObject *obj, float *val1, float *val2, float *val3,
 #define RectExport_setmidright pg_frect_setmidright
 #define RectExport_getcenter pg_frect_getcenter
 #define RectExport_setcenter pg_frect_setcenter
+#define RectExport_getrelcenter pg_frect_getrelcenter
+#define RectExport_setrelcenter pg_frect_setrelcenter
 #define RectExport_getsize pg_frect_getsize
 #define RectExport_setsize pg_frect_setsize
 #define RectImport_primitiveType float
+#define RectImport_PrimitiveTypeName "float"
 #define RectImport_RectCheck pgFRect_Check
 #define RectImport_OtherRectCheck pgRect_Check
+#define RectImport_OtherRectCheckExact pgRect_CheckExact
 #define RectImport_RectCheckExact pgFRect_CheckExact
 #define RectImport_innerRectStruct SDL_FRect
 #define RectImport_otherInnerRectStruct SDL_Rect
@@ -266,6 +275,7 @@ four_floats_from_obj(PyObject *obj, float *val1, float *val2, float *val3,
 #define RectImport_IntersectRectAndLine PG_IntersectFRectAndLine
 #define RectImport_TypeObject pgFRect_Type
 #define RectImport_PyBuildValueFormat "f"
+#define RectImport_TupleFromTwoPrimitives pg_tuple_couple_from_values_double
 #define RectImport_ObjectName "pygame.rect.FRect"
 #define RectImport_PythonNumberCheck PyFloat_Check
 #define RectImport_PythonNumberAsPrimitiveType PyFloat_AsDouble
@@ -467,14 +477,13 @@ static struct PyMethodDef pg_rect_methods[] = {
     {"fit", (PyCFunction)pg_rect_fit, METH_FASTCALL, DOC_RECT_FIT},
     {"move", (PyCFunction)pg_rect_move, METH_FASTCALL, DOC_RECT_MOVE},
     {"update", (PyCFunction)pg_rect_update, METH_FASTCALL, DOC_RECT_UPDATE},
-    {"inflate", (PyCFunction)pg_rect_inflate, METH_VARARGS, DOC_RECT_INFLATE},
+    {"inflate", (PyCFunction)pg_rect_inflate, METH_FASTCALL, DOC_RECT_INFLATE},
     {"union", (PyCFunction)pg_rect_union, METH_FASTCALL, DOC_RECT_UNION},
-    {"unionall", (PyCFunction)pg_rect_unionall, METH_VARARGS,
-     DOC_RECT_UNIONALL},
+    {"unionall", (PyCFunction)pg_rect_unionall, METH_O, DOC_RECT_UNIONALL},
     {"move_ip", (PyCFunction)pg_rect_move_ip, METH_FASTCALL, DOC_RECT_MOVEIP},
     {"move_to", (PyCFunction)pg_rect_move_to, METH_FASTCALL | METH_KEYWORDS,
      DOC_RECT_MOVETO},
-    {"inflate_ip", (PyCFunction)pg_rect_inflate_ip, METH_VARARGS,
+    {"inflate_ip", (PyCFunction)pg_rect_inflate_ip, METH_FASTCALL,
      DOC_RECT_INFLATEIP},
     {"scale_by", (PyCFunction)pg_rect_scale_by, METH_VARARGS | METH_KEYWORDS,
      DOC_RECT_SCALEBY},
@@ -482,7 +491,7 @@ static struct PyMethodDef pg_rect_methods[] = {
      METH_VARARGS | METH_KEYWORDS, DOC_RECT_SCALEBYIP},
     {"union_ip", (PyCFunction)pg_rect_union_ip, METH_FASTCALL,
      DOC_RECT_UNIONIP},
-    {"unionall_ip", (PyCFunction)pg_rect_unionall_ip, METH_VARARGS,
+    {"unionall_ip", (PyCFunction)pg_rect_unionall_ip, METH_O,
      DOC_RECT_UNIONALLIP},
     {"collidepoint", (PyCFunction)pg_rect_collidepoint, METH_FASTCALL,
      DOC_RECT_COLLIDEPOINT},
@@ -519,14 +528,14 @@ static struct PyMethodDef pg_frect_methods[] = {
     {"fit", (PyCFunction)pg_frect_fit, METH_FASTCALL, DOC_RECT_FIT},
     {"move", (PyCFunction)pg_frect_move, METH_FASTCALL, DOC_RECT_MOVE},
     {"update", (PyCFunction)pg_frect_update, METH_FASTCALL, DOC_RECT_UPDATE},
-    {"inflate", (PyCFunction)pg_frect_inflate, METH_VARARGS, DOC_RECT_INFLATE},
+    {"inflate", (PyCFunction)pg_frect_inflate, METH_FASTCALL,
+     DOC_RECT_INFLATE},
     {"union", (PyCFunction)pg_frect_union, METH_FASTCALL, DOC_RECT_UNION},
-    {"unionall", (PyCFunction)pg_frect_unionall, METH_VARARGS,
-     DOC_RECT_UNIONALL},
+    {"unionall", (PyCFunction)pg_frect_unionall, METH_O, DOC_RECT_UNIONALL},
     {"move_ip", (PyCFunction)pg_frect_move_ip, METH_FASTCALL, DOC_RECT_MOVEIP},
     {"move_to", (PyCFunction)pg_frect_move_to, METH_FASTCALL | METH_KEYWORDS,
      DOC_RECT_MOVETO},
-    {"inflate_ip", (PyCFunction)pg_frect_inflate_ip, METH_VARARGS,
+    {"inflate_ip", (PyCFunction)pg_frect_inflate_ip, METH_FASTCALL,
      DOC_RECT_INFLATEIP},
     {"scale_by", (PyCFunction)pg_frect_scale_by, METH_VARARGS | METH_KEYWORDS,
      DOC_RECT_SCALEBY},
@@ -534,7 +543,7 @@ static struct PyMethodDef pg_frect_methods[] = {
      METH_VARARGS | METH_KEYWORDS, DOC_RECT_SCALEBYIP},
     {"union_ip", (PyCFunction)pg_frect_union_ip, METH_FASTCALL,
      DOC_RECT_UNIONIP},
-    {"unionall_ip", (PyCFunction)pg_frect_unionall_ip, METH_VARARGS,
+    {"unionall_ip", (PyCFunction)pg_frect_unionall_ip, METH_O,
      DOC_RECT_UNIONALLIP},
     {"collidepoint", (PyCFunction)pg_frect_collidepoint, METH_FASTCALL,
      DOC_RECT_COLLIDEPOINT},
@@ -613,11 +622,11 @@ pg_rect_repr(pgRectObject *self)
 static PyObject *
 pg_frect_repr(pgFRectObject *self)
 {
-    char str[64];
+    char str[256];
 
-    int ret = PyOS_snprintf(str, 64, "FRect(%f, %f, %f, %f)", self->r.x,
+    int ret = PyOS_snprintf(str, 256, "FRect(%f, %f, %f, %f)", self->r.x,
                             self->r.y, self->r.w, self->r.h);
-    if (ret < 0 || ret >= 64) {
+    if (ret < 0 || ret >= 256) {
         return RAISE(PyExc_RuntimeError,
                      "Internal PyOS_snprintf call failed!");
     }
@@ -635,13 +644,6 @@ static PyObject *
 pg_frect_str(pgFRectObject *self)
 {
     return pg_frect_repr(self);
-}
-
-/* True for both types of rects */
-static PyObject *
-pg_rect_getsafepickle(pgRectObject *self, void *closure)
-{
-    Py_RETURN_TRUE;
 }
 
 static PyGetSetDef pg_frect_getsets[] = {
@@ -682,9 +684,8 @@ static PyGetSetDef pg_frect_getsets[] = {
     {"size", (getter)pg_frect_getsize, (setter)pg_frect_setsize, NULL, NULL},
     {"center", (getter)pg_frect_getcenter, (setter)pg_frect_setcenter, NULL,
      NULL},
-
-    {"__safe_for_unpickling__", (getter)pg_rect_getsafepickle, NULL, NULL,
-     NULL},
+    {"relcenter", (getter)pg_frect_getrelcenter, (setter)pg_frect_setrelcenter,
+     NULL, NULL},
     {NULL, 0, NULL, NULL, NULL} /* Sentinel */
 };
 
@@ -724,9 +725,8 @@ static PyGetSetDef pg_rect_getsets[] = {
     {"size", (getter)pg_rect_getsize, (setter)pg_rect_setsize, NULL, NULL},
     {"center", (getter)pg_rect_getcenter, (setter)pg_rect_setcenter, NULL,
      NULL},
-
-    {"__safe_for_unpickling__", (getter)pg_rect_getsafepickle, NULL, NULL,
-     NULL},
+    {"relcenter", (getter)pg_rect_getrelcenter, (setter)pg_rect_setrelcenter,
+     NULL, NULL},
     {NULL, 0, NULL, NULL, NULL} /* Sentinel */
 };
 
@@ -799,27 +799,20 @@ MODINIT_DEFINE(rect)
         return NULL;
     }
 
-    Py_INCREF(&pgRect_Type);
-    if (PyModule_AddObject(module, "RectType", (PyObject *)&pgRect_Type)) {
-        Py_DECREF(&pgRect_Type);
+    if (PyModule_AddObjectRef(module, "RectType", (PyObject *)&pgRect_Type)) {
         Py_DECREF(module);
         return NULL;
     }
-    Py_INCREF(&pgRect_Type);
-    if (PyModule_AddObject(module, "Rect", (PyObject *)&pgRect_Type)) {
-        Py_DECREF(&pgRect_Type);
+    if (PyModule_AddObjectRef(module, "Rect", (PyObject *)&pgRect_Type)) {
         Py_DECREF(module);
         return NULL;
     }
-    Py_INCREF(&pgFRect_Type);
-    if (PyModule_AddObject(module, "FRectType", (PyObject *)&pgFRect_Type)) {
-        Py_DECREF(&pgFRect_Type);
+    if (PyModule_AddObjectRef(module, "FRectType",
+                              (PyObject *)&pgFRect_Type)) {
         Py_DECREF(module);
         return NULL;
     }
-    Py_INCREF(&pgFRect_Type);
-    if (PyModule_AddObject(module, "FRect", (PyObject *)&pgFRect_Type)) {
-        Py_DECREF(&pgFRect_Type);
+    if (PyModule_AddObjectRef(module, "FRect", (PyObject *)&pgFRect_Type)) {
         Py_DECREF(module);
         return NULL;
     }
